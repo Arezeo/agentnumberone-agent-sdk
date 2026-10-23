@@ -1,0 +1,17 @@
+name: SDK tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/remote-control/requirements.txt
+      - run: python -m pip install -r scripts/remote-control/requirements.txt
+      - run: python tests/webrtc-client.test.py
+      - run: python -m py_compile scripts/remote-control/*.py
