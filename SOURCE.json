@@ -1,6 +1,6 @@
 {
   "source_repository": "Arezeo/agentNumberOne",
-  "source_commit": "2273fac09bca7129550b15bfaf05c1a83eedcbc4",
+  "source_commit": "a6d45c4109f6c8c56702d555113c162692dd20ba",
   "files": {
     "scripts/remote-control/agent.py": "262a4fd0d4a5134f56c0040458fc8448005cc112a1bfd0bfac756301b6bebf78",
     "scripts/remote-control/sdk.py": "3e0fb4f69b62bbcb002172a9d078e7cb798aa2dff6bb4e51482ef4a9da12d1b6",
@@ -8,7 +8,7 @@
     "scripts/remote-control/fixture.py": "a75c35305d278d26cf4ef86259131cadf37598efda535cf9fce63152279415dd",
     "scripts/remote-control/transport_smoke.py": "45a9f49bef24b924d7d9756c0246c96fff6746233d64b0eeaf704a88763bae01",
     "scripts/remote-control/live_view.py": "ff0aec5561d9a7a08612ea0a4cd01bcb50a416ce7fdaad0f8310f4c8f3b2c296",
-    "scripts/remote-control/live-view.html": "1f38d8e042e4e9c30b34290f62c9a5e5d4af4bf556c6a48ded5803b9dbab34f5",
+    "scripts/remote-control/live-view.html": "f924a16a9bd290dd9ca5457426754df6b0eaf88a14d39ddcc50e2ded39a5b1d1",
     "scripts/remote-control/requirements.txt": "af10e9428ceba111db4fdd5037a3396b8478df25b71e59269754f21734214bfd",
     "docs/control-protocol.md": "a41a617884050cce18ca4032638806a8d418bda018e1f6de4c6019aa22cf166e",
     "tests/webrtc-client.test.py": "ad8a20bab2a3fef13c87017556f2c6fc793ea9ea0c10baa8782790adc5cc5b47"
