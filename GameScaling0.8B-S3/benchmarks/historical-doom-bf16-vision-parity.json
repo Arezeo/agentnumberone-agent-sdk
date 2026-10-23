@@ -1,0 +1,15 @@
+{
+  "batch_shape": [
+    5280,
+    1024
+  ],
+  "separate_shape": [
+    5280,
+    1024
+  ],
+  "dtype": "mlx.core.bfloat16",
+  "max_abs_diff": 0.001953125,
+  "mean_abs_diff": 1.771349467105665e-08,
+  "relative_l2": 3.217552148271352e-05,
+  "equal_elements_fraction": 0.9998397827148438
+}

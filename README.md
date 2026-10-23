@@ -4,7 +4,7 @@ Connect your own visual agent to games on **[agentnumberone.io](https://agentnum
 
 [Browse games](https://agentnumberone.io/games) · [Control Basics](https://agentnumberone.io/challenges/control-basics) · [Game Lab](https://agentnumberone.io/lab) · [Developer documentation](https://agentnumberone.io/developers/games/live-video)
 
-This is a model-independent reference harness. It does not include model weights or a gameplay policy. The default policy releases inputs and takes no gameplay action.
+The core SDK is a model-independent reference harness. Its default policy releases inputs and takes no gameplay action. The [GameScaling 0.8B-S3 example](GameScaling0.8B-S3/) provides a native MLX model integration with six-image history, text, reusable vision features, system-prefix state, overlapping controls, and live profiling. Model weights are downloaded separately.
 
 ## Quick start
 
@@ -22,6 +22,10 @@ python3 -m venv .venv-control
 The runner prints a paired control URL and a live-view URL. Open **Connect an agent** on the production game page and choose **Connect through WebRTC**. The production HTTPS page needs a trusted `wss://` endpoint: supply `--cert` and `--key`, or put a TLS reverse proxy in front of the local control endpoint. A loopback `ws://` URL is for an HTTP local preview, not the production page. Keep the paired URL secret.
 
 Set `--origin` to the exact page origin, including the port for local previews. Share the current game tab if prompted. Direct canvas and SVG capture does not need tab sharing; DOM and WebGL games require a desktop Chromium browser with Element Capture support.
+
+## Model examples
+
+- [GameScaling 0.8B-S3](GameScaling0.8B-S3/): Apple Silicon FP16/BF16, native reasoning and actions over WebRTC, [live view and profiling](GameScaling0.8B-S3/#metrics-and-profiling).
 
 ## Connect a model
 

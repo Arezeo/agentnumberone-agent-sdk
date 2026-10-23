@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/THUSI-Lab/GameScaling",
+  "commit": "6764efabfbb4121d6e5d3cfcbc54dedf1469bf5a",
+  "license": "Apache-2.0",
+  "modified": false,
+  "files": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "gamescaling/policy.py": "daabe80fcba7134070fb68d12246e3a423a360194e394ace658aa6cad4961a44",
+    "gamescaling/keymaps.py": "6f067bf9ef5697809e944a5adf3eb947b3621bf453b18aeacc7cf057374a17f0",
+    "gamescaling/__init__.py": "e4358222a72e8ec2effc7036b0a72688caabf31570387819230c2b1e19c85598",
+    "gamescaling/action.py": "39e3c9dcf63aeebe191c5b4c59dabae0211abc0257b8e62bf6c0ff2d4b0563f4",
+    "gamescaling/prompt.py": "3c5a617a30fa1b3567ee0d63c564f10615c946ee7d0cc8f8c14ba4fb6906f7a5",
+    "prompts/example_doom_battle1.txt": "ddb28e9d8e76468bb9fd6dd98e6ce58bfea0af5999fe7a44f88cb6fcaceeadde",
+    "prompts/system_prompt_template.txt": "892731b1046f48aed08b6b82cd81c2479482af3d83e7340b170d59602e66dca2"
+  }
+}
