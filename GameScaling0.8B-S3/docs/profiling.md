@@ -29,3 +29,7 @@ That feature comparison found relative L2 difference `3.21755e-5` between batche
 ## What remains unmeasured
 
 The replay does not measure production browser capture/encode latency, internet transit, actual game application time, score improvement, thermal steady state, or GPU kernel-level timing. The runner logs receiver-side timing and queued controls; it has no per-action application acknowledgement. The scheduler tests verify overlap and invalidation, but a browser must reconnect before collecting fresh production gameplay measurements.
+
+## Follow-up: prefill and CPU preprocessing
+
+The [2026-10-23 experiment report](../experiments/README.md) compared six prefill block settings and tested original processor-tensor reuse separately. No prefill setting reliably beat the existing 2,048-token default. The corrected preprocessing cache reduced paired replay latency by about 24 ms (2.8%), with bitwise input-tensor equality and all 32 greedy pairs matching. A separate 16-pair test at native live settings also matched every continuation, including five pairs with generated reasoning and final-text callbacks. This verifies computation and text emission, not a new production game score.

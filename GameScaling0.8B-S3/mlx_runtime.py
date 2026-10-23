@@ -1,9 +1,11 @@
 """Exact-input reuse for the pinned Qwen3.5 GameScaling checkpoint.
 
-Historical images remain in the prompt. Only image features and the unchanged
-text-only system prefix are reused. Sliding multimodal/recurrent state is never
+Historical images remain in the prompt. Image preprocessing tensors, image
+features, and the unchanged text-only system prefix can be reused. Sliding multimodal/recurrent state is never
 trimmed or substituted for a different history.
 """
+from contextlib import nullcontext
+from preprocess_cache import PreprocessedImages
 import hashlib
 import time
 
@@ -117,13 +119,16 @@ class SystemPrefix:
 
 
 class ReuseRuntime:
-    def __init__(self, vision=True, system_prefix=True):
+    def __init__(self, vision=True, system_prefix=True, preprocess=False):
+        self.preprocess_enabled = preprocess
+        self.pixels = PreprocessedImages()
         self.vision_enabled = vision
         self.prefix_enabled = system_prefix
         self.features = VisionFeatures()
         self.prefix = SystemPrefix()
 
     def clear(self):
+        self.pixels.clear()
         self.features.clear()
         self.prefix.clear()
 
@@ -131,10 +136,11 @@ class ReuseRuntime:
         import mlx.core as mx
         from mlx_vlm.utils import prepare_inputs, should_add_special_tokens
         start = time.monotonic()
-        inputs = prepare_inputs(
-            processor, images=images, prompts=prompt,
-            image_token_index=model.config.image_token_index,
-            add_special_tokens=should_add_special_tokens(model.config.model_type, processor))
+        with self.pixels.install(processor) if self.preprocess_enabled else nullcontext():
+            inputs = prepare_inputs(
+                processor, images=images, prompts=prompt,
+                image_token_index=model.config.image_token_index,
+                add_special_tokens=should_add_special_tokens(model.config.model_type, processor))
         mx.eval(*inputs.values())
         prepared = time.monotonic()
         combined, hits = (None, 0)
@@ -152,6 +158,9 @@ class ReuseRuntime:
             options['cached_image_features'] = combined
         done = time.monotonic()
         return options, {
+            'preprocess_reuse': self.preprocess_enabled,
+            'preprocess_cache_hits': self.pixels.hits if self.preprocess_enabled else 0,
+            'images_preprocessed': self.pixels.misses if self.preprocess_enabled else len(images),
             'prepare_ms': (prepared-start)*1000,
             'vision_ms': (encoded-prepared)*1000 if self.vision_enabled else None,
             'system_prefix_ms': (done-encoded)*1000,

@@ -1,0 +1,543 @@
+{
+  "precision": "fp16",
+  "images": 6,
+  "history": 5,
+  "temperature": 1.0,
+  "max_tokens": 2048,
+  "prefill_step_size": 2048,
+  "pairs": [
+    {
+      "corpus": "production-crossroad",
+      "seed": 0,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1240.2231669984758,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 1194.2708749993471,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 1,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 1192.3380000007455,
+          "output_sha256": "addedb027106641f01dc646992fbcddbe4485daea740e33d4e4501b031317ce3",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 1213.5558749941993,
+          "output_sha256": "addedb027106641f01dc646992fbcddbe4485daea740e33d4e4501b031317ce3",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 2,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1260.744833998615,
+          "output_sha256": "0b0eb6cd38c6df88f8b956a84ce56e694e36c4fc78339ca19d94fca5a3166577",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 36
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 1225.9230420022504,
+          "output_sha256": "0b0eb6cd38c6df88f8b956a84ce56e694e36c4fc78339ca19d94fca5a3166577",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 36
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 3,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 1230.101665998518,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 1248.6638339978526,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 4,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1222.0506250014296,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 1313.9423340035137,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 5,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 1302.5996670039603,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 1318.0501669994555,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 6,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1343.00725000503,
+          "output_sha256": "4b6d75a74c551e513d9e21df2584aff5d4c8d2a6c44c373048f6ec92582af039",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 34
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 1352.2088329991675,
+          "output_sha256": "4b6d75a74c551e513d9e21df2584aff5d4c8d2a6c44c373048f6ec92582af039",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 34
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 7,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 1987.510792001558,
+          "output_sha256": "14ffa929218e43d76dfe6c87af435e136ba42250909d9eeae1f8a421ca5389c9",
+          "parsed": true,
+          "reasoning_chars": 315,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 93
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 2068.724624994502,
+          "output_sha256": "14ffa929218e43d76dfe6c87af435e136ba42250909d9eeae1f8a421ca5389c9",
+          "parsed": true,
+          "reasoning_chars": 315,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 93
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 0,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 2151.017290998425,
+          "output_sha256": "a6a73679f8dba239bc63fd451aa39f132a15167872ccc0e7eea0218cfc47eef0",
+          "parsed": true,
+          "reasoning_chars": 354,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 98
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 2079.6275829998194,
+          "output_sha256": "a6a73679f8dba239bc63fd451aa39f132a15167872ccc0e7eea0218cfc47eef0",
+          "parsed": true,
+          "reasoning_chars": 354,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 98
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 1,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 2167.308708994824,
+          "output_sha256": "ab30dca92b2f6bde2d884000bcfe451ff4dca9e421ad748577c99eb242c931e0",
+          "parsed": true,
+          "reasoning_chars": 326,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 104
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 2254.593624995323,
+          "output_sha256": "ab30dca92b2f6bde2d884000bcfe451ff4dca9e421ad748577c99eb242c931e0",
+          "parsed": true,
+          "reasoning_chars": 326,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 104
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 2,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1138.7477079988457,
+          "output_sha256": "a00e8431291f0c374af53b03ed0941ced60bc220081ac7bef4cbf80d2f88d04c",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 32
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 912.0634159990004,
+          "output_sha256": "a00e8431291f0c374af53b03ed0941ced60bc220081ac7bef4cbf80d2f88d04c",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 32
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 3,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 870.68108299718,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 901.8433329983964,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 4,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 836.7887080021319,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 869.6532079993631,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 5,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 807.5407910000649,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 820.5960420018528,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 6,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 1356.8847909991746,
+          "output_sha256": "7adbd7b53a08a923d8e563108e984212bf83033d4e7ed22ab3e80c589fd39ede",
+          "parsed": true,
+          "reasoning_chars": 385,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 106
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 1311.5844999992987,
+          "output_sha256": "7adbd7b53a08a923d8e563108e984212bf83033d4e7ed22ab3e80c589fd39ede",
+          "parsed": true,
+          "reasoning_chars": 385,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 106
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 7,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 1364.9806670000544,
+          "output_sha256": "c1eda32feda0ffdec18a6960852298198dd8a7482be77604dbd7456866ec3098",
+          "parsed": true,
+          "reasoning_chars": 388,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 112
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 1380.0993340046261,
+          "output_sha256": "c1eda32feda0ffdec18a6960852298198dd8a7482be77604dbd7456866ec3098",
+          "parsed": true,
+          "reasoning_chars": 388,
+          "final_text_event": true,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 112
+        }
+      ]
+    }
+  ],
+  "all_outputs_match": true,
+  "reasoning_seen": true,
+  "hardware": "Apple M5 Pro, 24 GB unified memory",
+  "date": "2026-10-23",
+  "scope": "Model inference and final-text callback; not production WebRTC delivery or a game score"
+}

@@ -52,6 +52,7 @@ class ReuseContractTests(unittest.TestCase):
         self.assertEqual(captured['messages'][-1]['content'], '<think>')
         self.assertEqual(captured['options']['temperature'], 1.0)
         self.assertEqual(captured['options']['max_tokens'], 2048)
+        self.assertEqual(captured['options']['prefill_step_size'], 2048)
         self.assertEqual(timing['history_frames'], 5)
         self.assertEqual(timing['images_in_context'], 6)
         self.assertIn(('hello', True), output)
