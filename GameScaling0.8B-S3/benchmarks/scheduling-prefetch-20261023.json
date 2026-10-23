@@ -1,0 +1,245 @@
+{
+  "protocol": {
+    "precision": "fp16",
+    "images_in_A": 6,
+    "history_in_A": 5,
+    "temperature": 0.0,
+    "max_tokens": 48,
+    "reasoning_prefix": "<think>",
+    "prefill_step_size": 2048,
+    "rounds": 4,
+    "variants": [
+      "serial",
+      "cpu-prefetch",
+      "gpu-prefetch"
+    ],
+    "scenarios": [
+      "conditional-exact-hit",
+      "changed-pixels-miss"
+    ],
+    "timing": "A decision plus selected-B image feature readiness; B language inference is not measured",
+    "first_action_metric": "A output completion; a throughput benefit cannot excuse delaying A",
+    "source_timing": "Explicit causal admission fixtures, not a live scheduling implementation",
+    "cpu_worker": "Only NumPy/PIL pixel processing; one cloned processor, no MLX calls",
+    "gpu_owner": "One model-owner thread; speculative vision submitted on a separate MLX GPU stream",
+    "drain": "All pending candidate GPU work is evaluated before completion, including discarded work"
+  },
+  "summary": {
+    "conditional-exact-hit": {
+      "serial": {
+        "n": 8,
+        "mean_total_ms": 1729.2613382505806,
+        "mean_action_ready_ms": 1575.63227574974,
+        "mean_paired_total_reduction_percent": 0.0,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          0.0,
+          0.0
+        ],
+        "mean_first_action_delay_ms": 0.0,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          0.0,
+          0.0
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": 0.0,
+        "secondary_post_first_chunk_total_delta_ms": 0.0,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          0.0,
+          0.0
+        ]
+      },
+      "cpu-prefetch": {
+        "n": 8,
+        "mean_total_ms": 1672.300864499448,
+        "mean_action_ready_ms": 1529.7725259997605,
+        "mean_paired_total_reduction_percent": 3.409629206180162,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          0.02009343812360135,
+          7.5929085574968544
+        ],
+        "mean_first_action_delay_ms": -45.85974974997953,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          -107.45422176239572,
+          8.560521124309162
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": -15.65073962592578,
+        "secondary_post_first_chunk_total_delta_ms": -26.75146362707892,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          -57.03176663105296,
+          5.339169925150573
+        ]
+      },
+      "gpu-prefetch": {
+        "n": 8,
+        "mean_total_ms": 1639.6816089991262,
+        "mean_action_ready_ms": 1639.606843623369,
+        "mean_paired_total_reduction_percent": 5.514792085688002,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          1.9505629146558305,
+          9.67791385448613
+        ],
+        "mean_first_action_delay_ms": 63.974567873628985,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          -3.990171693044431,
+          124.29826012246387
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": 119.10719249772228,
+        "secondary_post_first_chunk_total_delta_ms": -34.447104627361114,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          -66.95957241638553,
+          -2.9174669787153658
+        ]
+      }
+    },
+    "changed-pixels-miss": {
+      "serial": {
+        "n": 8,
+        "mean_total_ms": 1756.5773282494774,
+        "mean_action_ready_ms": 1597.5795991244013,
+        "mean_paired_total_reduction_percent": 0.0,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          0.0,
+          0.0
+        ],
+        "mean_first_action_delay_ms": 0.0,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          0.0,
+          0.0
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": 0.0,
+        "secondary_post_first_chunk_total_delta_ms": 0.0,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          0.0,
+          0.0
+        ]
+      },
+      "cpu-prefetch": {
+        "n": 8,
+        "mean_total_ms": 1690.8173227511725,
+        "mean_action_ready_ms": 1530.8891980002954,
+        "mean_paired_total_reduction_percent": 3.1847521592095833,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          -3.007941199861788,
+          10.101387286306638
+        ],
+        "mean_first_action_delay_ms": -66.69040112410585,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          -175.81846002346992,
+          31.69878576729834
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": -16.670322752361244,
+        "secondary_post_first_chunk_total_delta_ms": -15.73992712656036,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          -77.06325254316653,
+          40.00187474775885
+        ]
+      },
+      "gpu-prefetch": {
+        "n": 8,
+        "mean_total_ms": 1938.6801094979091,
+        "mean_action_ready_ms": 1772.422895874115,
+        "mean_paired_total_reduction_percent": -10.672892133276084,
+        "paired_total_reduction_bootstrap_95ci_percent": [
+          -17.26123018917266,
+          -4.647724940450727
+        ],
+        "mean_first_action_delay_ms": 174.84329674971377,
+        "paired_first_action_delay_bootstrap_95ci_ms": [
+          88.17969101201015,
+          255.79194935735345
+        ],
+        "output_matches": 8,
+        "feature_matches": 8,
+        "secondary_post_first_chunk_action_delta_ms": 153.14890624813415,
+        "secondary_post_first_chunk_total_delta_ms": 160.4083907468521,
+        "secondary_post_first_chunk_total_delta_bootstrap_95ci_ms": [
+          57.14173162236875,
+          260.19680644380963
+        ]
+      }
+    }
+  },
+  "failures": [],
+  "default_changed": false,
+  "limitation": "Conditional hit/miss compute experiment; separate GPU submission does not itself prove kernel overlap, and A+B image-feature work is not a measured B decision or gameplay rollout.",
+  "limitations": [
+    "Eight repeated measured cases per variant/scenario, only two replay corpora; this is not a general speed claim.",
+    "Ordinary desktop activity remained; a mid-run load-average snapshot was about 12.8/10.3/8.6.",
+    "Work submitted only after the first decoded chunk. Differences before that point reflect runtime/load variation, so post-first-chunk deltas are included as secondary diagnostics, not production latency.",
+    "No native-temperature acceptance or production scheduler integration was attempted; defaults are unchanged."
+  ],
+  "hardware": "Apple M5 Pro, 24 GB unified memory",
+  "date": "2026-10-23",
+  "decision": "Keep production scheduling unchanged. Conditional combined-work gains do not establish faster action latency or useful live prefetch.",
+  "samples": [
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"serial","total_ms":1942.2472500009462,"action_ready_ms":1763.4548340065521,"first_chunk_ms":1151.1880840043887,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3213573890,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"cpu-prefetch","total_ms":1928.3694170007948,"action_ready_ms":1756.5560419971007,"first_chunk_ms":1131.6339170007268,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217653538,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"gpu-prefetch","total_ms":1857.2125419959775,"action_ready_ms":1857.112124998821,"first_chunk_ms":1076.5124169993214,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"gpu-prefetch","total_ms":2069.1829579955083,"action_ready_ms":1890.0863749950076,"first_chunk_ms":1150.1099999950384,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"cpu-prefetch","total_ms":1868.8203749989043,"action_ready_ms":1697.3567090026336,"first_chunk_ms":1133.1863750019693,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"serial","total_ms":1918.9814170022146,"action_ready_ms":1762.9521670023678,"first_chunk_ms":1128.8175840018084,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"serial","total_ms":1932.6023750036256,"action_ready_ms":1763.512958001229,"first_chunk_ms":1090.0958749989513,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"gpu-prefetch","total_ms":1878.9216659934027,"action_ready_ms":1878.8673329981975,"first_chunk_ms":1114.0379999997094,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"cpu-prefetch","total_ms":1862.8899169998476,"action_ready_ms":1701.0208749998128,"first_chunk_ms":1106.8234580015996,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"cpu-prefetch","total_ms":1878.8631659990642,"action_ready_ms":1720.3620000000228,"first_chunk_ms":1119.0452910013846,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"gpu-prefetch","total_ms":2084.760041994741,"action_ready_ms":1919.7483329990064,"first_chunk_ms":1126.0263329968438,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"serial","total_ms":1911.0601669963216,"action_ready_ms":1741.8719589986722,"first_chunk_ms":1115.5379589981749,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"gpu-prefetch","total_ms":1922.3161659974721,"action_ready_ms":1922.2395409960882,"first_chunk_ms":1116.0769999987679,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217669922,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"serial","total_ms":1942.1210829968913,"action_ready_ms":1780.5881249951199,"first_chunk_ms":1158.8260409989743,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217671436,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"cpu-prefetch","total_ms":1865.463499998441,"action_ready_ms":1716.4677499968093,"first_chunk_ms":1163.63037499832,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217671436,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"cpu-prefetch","total_ms":1716.0435830010101,"action_ready_ms":1529.2967909990693,"first_chunk_ms":905.169500001648,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217671468,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"serial","total_ms":1890.1602080004523,"action_ready_ms":1715.522416998283,"first_chunk_ms":1028.3712079981342,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217671468,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"gpu-prefetch","total_ms":1798.1479579975712,"action_ready_ms":1657.5166249967879,"first_chunk_ms":1046.5341250019264,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217671468,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"gpu-prefetch","total_ms":1493.7740409950493,"action_ready_ms":1493.7117909939843,"first_chunk_ms":909.5103329964331,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"cpu-prefetch","total_ms":1639.212709000276,"action_ready_ms":1497.6092090000748,"first_chunk_ms":967.0162920010625,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"serial","total_ms":1675.160083002993,"action_ready_ms":1520.2665000033448,"first_chunk_ms":1032.404708006652,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"serial","total_ms":1713.56625000044,"action_ready_ms":1568.8541250056005,"first_chunk_ms":1037.281917000655,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"cpu-prefetch","total_ms":1675.4515420034295,"action_ready_ms":1495.8927920015412,"first_chunk_ms":962.0930000019143,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"gpu-prefetch","total_ms":2225.413166997896,"action_ready_ms":1970.0249169982271,"first_chunk_ms":1102.8989170008572,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"cpu-prefetch","total_ms":1727.1895409940043,"action_ready_ms":1584.95183299965,"first_chunk_ms":1085.396499998751,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"gpu-prefetch","total_ms":1633.8967499978025,"action_ready_ms":1633.831334002025,"first_chunk_ms":953.6875420017168,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"serial","total_ms":1789.0307499983464,"action_ready_ms":1639.458082994679,"first_chunk_ms":1123.059874997125,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"serial","total_ms":1748.1632499984698,"action_ready_ms":1582.0236250001471,"first_chunk_ms":1037.1585839966428,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"gpu-prefetch","total_ms":1946.5411249984754,"action_ready_ms":1791.290791996289,"first_chunk_ms":1092.5084589980543,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"production-crossroad","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"cpu-prefetch","total_ms":1371.3665420000325,"action_ready_ms":1241.0287500024424,"first_chunk_ms":846.2974170033704,"generation_tokens":31,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3217686306,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"serial","total_ms":1355.194208001194,"action_ready_ms":1226.1538329985342,"first_chunk_ms":821.2415000016335,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219785620,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"cpu-prefetch","total_ms":1320.0237919954816,"action_ready_ms":1197.3963339987677,"first_chunk_ms":789.1500419937074,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219802020,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":0,"warmup":true,"variant":"gpu-prefetch","total_ms":1313.579875000869,"action_ready_ms":1313.5234590008622,"first_chunk_ms":807.4416669987841,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219802020,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"gpu-prefetch","total_ms":1446.9732500001555,"action_ready_ms":1317.8622920022462,"first_chunk_ms":809.4550829991931,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803534,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"cpu-prefetch","total_ms":1399.9919170018984,"action_ready_ms":1265.3531250034575,"first_chunk_ms":832.9380830036826,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":0,"warmup":true,"variant":"serial","total_ms":1504.517624998698,"action_ready_ms":1363.7604999967152,"first_chunk_ms":905.2235839990317,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"serial","total_ms":1469.0507909981534,"action_ready_ms":1331.9107909992454,"first_chunk_ms":906.0294160008198,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"gpu-prefetch","total_ms":1219.0443330036942,"action_ready_ms":1218.9621249999618,"first_chunk_ms":773.2314170061727,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":1,"warmup":false,"variant":"cpu-prefetch","total_ms":1231.403958001465,"action_ready_ms":1106.996208000055,"first_chunk_ms":727.8488330048276,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"cpu-prefetch","total_ms":1408.5469579949859,"action_ready_ms":1272.7349169945228,"first_chunk_ms":842.8083749968209,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"gpu-prefetch","total_ms":1435.1593339961255,"action_ready_ms":1312.9354999982752,"first_chunk_ms":802.4424999966868,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":1,"warmup":false,"variant":"serial","total_ms":1288.5558339985437,"action_ready_ms":1163.5010839963797,"first_chunk_ms":781.5621249974356,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"gpu-prefetch","total_ms":1290.4817080052453,"action_ready_ms":1290.4342080000788,"first_chunk_ms":799.1329170035897,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"serial","total_ms":1326.1195420054719,"action_ready_ms":1194.837125003687,"first_chunk_ms":808.751750002557,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":2,"warmup":false,"variant":"cpu-prefetch","total_ms":1354.6651249998831,"action_ready_ms":1232.0614580021356,"first_chunk_ms":832.0943750004517,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"cpu-prefetch","total_ms":1796.5371660029632,"action_ready_ms":1640.943625003274,"first_chunk_ms":1031.2074580069748,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"serial","total_ms":1976.4572920030332,"action_ready_ms":1811.8768749991432,"first_chunk_ms":1164.941875002114,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":2,"warmup":false,"variant":"gpu-prefetch","total_ms":2124.413583005662,"action_ready_ms":1947.8808750063763,"first_chunk_ms":1157.8547910030466,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"gpu-prefetch","total_ms":1866.12704199797,"action_ready_ms":1866.0071669946774,"first_chunk_ms":1096.7994169986923,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219803566,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"cpu-prefetch","total_ms":1907.3149579999154,"action_ready_ms":1759.1332500014687,"first_chunk_ms":1104.8420420047478,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818372,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":3,"warmup":false,"variant":"serial","total_ms":1841.072041002917,"action_ready_ms":1681.1625830014236,"first_chunk_ms":1080.908083000395,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818372,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"serial","total_ms":1803.9702499954728,"action_ready_ms":1636.4975420001429,"first_chunk_ms":1030.896041993401,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818372,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"cpu-prefetch","total_ms":1813.1354170036502,"action_ready_ms":1659.7762090023025,"first_chunk_ms":1053.4333339965087,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818372,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":3,"warmup":false,"variant":"gpu-prefetch","total_ms":1969.018708994554,"action_ready_ms":1811.9939169991994,"first_chunk_ms":1059.240583999781,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219818372,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"cpu-prefetch","total_ms":1790.267208001751,"action_ready_ms":1639.9396249980782,"first_chunk_ms":1030.4342919989722,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818404,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"gpu-prefetch","total_ms":1812.8911660023732,"action_ready_ms":1812.8012500019395,"first_chunk_ms":1056.2206250033341,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219818404,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"conditional-exact-hit","round":4,"warmup":false,"variant":"serial","total_ms":1858.934040996246,"action_ready_ms":1693.3220409991918,"first_chunk_ms":1059.682499995688,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":true,"admission_reason":"exact_pixels_for_eligible_selected_frame","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818404,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"serial","total_ms":1720.685375003086,"action_ready_ms":1560.4891659968416,"first_chunk_ms":1036.69670799718,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":0,"candidate_cpu_overlaps_A":false,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219818404,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"gpu-prefetch","total_ms":1925.9869579982478,"action_ready_ms":1767.992207998759,"first_chunk_ms":1018.4958329991787,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":true,"peak_mlx_bytes":3219818404,"images_in_context":6,"identical_output":true,"identical_B_features":true},
+    {"corpus":"recorded-doom","scenario":"changed-pixels-miss","round":4,"warmup":false,"variant":"cpu-prefetch","total_ms":1866.5942080042441,"action_ready_ms":1687.0784999991884,"first_chunk_ms":1072.2314160011592,"generation_tokens":33,"native_output":"<think>\n\n</think>\n\n<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>","admitted":false,"admission_reason":"pixels_changed","candidate_source_id":10,"selected_source_id":11,"discarded_candidates":1,"candidate_cpu_overlaps_A":true,"gpu_submitted_before_A_output":false,"peak_mlx_bytes":3219819950,"images_in_context":6,"identical_output":true,"identical_B_features":true}
+  ]
+}

@@ -25,6 +25,11 @@ class PrefetchAdmissionTests(unittest.TestCase):
         self.assertFalse(self.check(candidate=replace(self.candidate,context=('old-session',1)))[0])
     def test_processing_change_rejects_features(self):
         self.assertEqual(self.check(selected=replace(self.selected,processing='changed-size'))[1],'processing_changed')
+    def test_clock_domains_cannot_be_mixed(self):
+        self.assertEqual(self.check(candidate=replace(self.candidate,clock='process-relative'))[1],'clock_domain_changed')
+    def test_nonfinite_timestamps_are_not_admitted(self):
+        for value in (float('nan'),float('inf'),True):
+            self.assertEqual(self.check(selected=replace(self.selected,received_at=value))[1],'invalid_timestamp')
     def test_no_future_candidate_can_supply_an_earlier_observation(self):
         self.assertEqual(self.check(candidate=replace(self.candidate,received_at=2.2))[1],'candidate_from_future')
 
