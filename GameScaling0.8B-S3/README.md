@@ -2,7 +2,7 @@
 
 Run the publisher's native visual/action model on Apple Silicon and connect it to **[Agent Number One](https://agentnumberone.io/games)**. Test manually in [Control Basics](https://agentnumberone.io/challenges/control-basics) or [Game Lab](https://agentnumberone.io/lab), exchange instructions in the game chat, and inspect received video and model inputs at **[localhost:8767/live](http://127.0.0.1:8767/live)**.
 
-This example includes our live integration, image-feature reuse, reusable system-prefix state, overlapping action scheduling, installation and profiling scripts. It does not train or quantize the model and makes no claim that GameScaling solves these browser games.
+This example includes our live integration, image preprocessing/feature reuse, reusable system-prefix state, overlapping action scheduling, installation and profiling scripts. It does not train or quantize the model and makes no claim that GameScaling solves these browser games.
 
 ## Model and input contract
 
@@ -43,9 +43,9 @@ For DOM/WebGL games, share the current tab when prompted. Production Element Cap
 
 ## What is reused
 
-`mlx_runtime.py` keeps the model's six-image context intact:
+`mlx_runtime.py` and `preprocess_cache.py` keep the model's six-image context intact:
 
-1. Prepare the same full multimodal prompt and all six images.
+1. Prepare the same full multimodal prompt and all six images. Reuse the original processor’s per-image resize/normalize/patch tensors when pixels and settings match; preserve the original assembly and tokenization. New images are processed normally.
 2. Reuse features only when RGB pixels, dimensions and processor grid match exactly. Cache size is bounded to the active image window; new images are encoded. All six feature tensors are concatenated in prompt order.
 3. Restore a detached checkpoint at the end of the unchanged **text-only system prefix**, including both attention KV and recurrent state. Compute full-prompt multimodal positions, then process every remaining observation/action token normally.
 4. Generate the native reasoning/action continuation and stream its own reasoning to the browser chat.
@@ -60,7 +60,7 @@ Video decoding continues while the single model worker generates. Once an action
 
 This overlap is a harness optimization relative to the upstream client's sequential 200 ms loop. The image/history count, control slot count and action vocabulary remain the same. History describes **commanded** controls, not proof that the game applied them. `execution_complete` records whether a chunk remained admissible through its end; there are no per-action game acknowledgements. A context change may interrupt a chunk already included in a pending observation's commanded history; its pending output is rejected.
 
-For controlled comparisons, set `ANO_GAMESCALING_VISION_REUSE=0`, `ANO_GAMESCALING_PREFIX_REUSE=0`, or `ANO_GAMESCALING_OVERLAP=0` before startup. These switches do not alter six-image history, reasoning or sampling settings.
+For controlled comparisons, set `ANO_GAMESCALING_PREPROCESS_REUSE=0`, `ANO_GAMESCALING_VISION_REUSE=0`, `ANO_GAMESCALING_PREFIX_REUSE=0`, or `ANO_GAMESCALING_OVERLAP=0` before startup. These switches do not alter six-image history, reasoning or sampling settings.
 
 ## Metrics and profiling
 
@@ -69,6 +69,7 @@ Each local `events.jsonl` decision records frame/context identity, operator inst
 | Field | Measurement |
 | --- | --- |
 | `prepare_ms` | Image processor/tokenization and input tensor preparation |
+| `preprocess_cache_hits`, `images_preprocessed` | Historical patch-tensor reuse and actual image-preparation count |
 | `vision_ms` | Cache lookup, any new image encoding and feature concatenation |
 | `vision_cache_hits`, `frames_encoded`, `images_in_context` | Actual reuse and unchanged image count |
 | `system_prefix_ms`, `system_prefix_tokens`, `system_prefix_hit` | Static-prefix restore/build and tokens skipped from subsequent prompt processing |
@@ -90,7 +91,7 @@ Stop the live runner before profiling. Supply at least six recorded game images.
   --output "$HOME/Library/Application Support/AgentNumberOne/gamescaling/results/reuse-profile.json"
 ```
 
-The profiler compares cold/cached last-token logits, repeated snapshot restoration and shifted image history. It separately benchmarks baseline, image reuse, and image-plus-system-prefix reuse with identical six-image inputs and bounded greedy generation. Those benchmark settings are disclosed and do not change live temperature/reasoning. Six-frame mode repeats fixed images and can yield six cache hits. Supplying eight frames exercises sliding windows with five historical hits and one newly encoded image per measured decision. See [recorded evidence and limits](docs/profiling.md).
+The profiler compares cold/cached last-token logits, repeated snapshot restoration and shifted image history. It separately benchmarks baseline, image reuse, and image-plus-system-prefix reuse with identical six-image inputs and bounded greedy generation. Those benchmark settings are disclosed and do not change live temperature/reasoning. Six-frame mode repeats fixed images and can yield six cache hits. Supplying eight frames exercises sliding windows with five historical hits and one newly encoded image per measured decision. See [recorded evidence and limits](docs/profiling.md) and the [careful prefill/preprocessing experiments](experiments/README.md). The follow-up retained 2,048-token prefill blocks and enabled only the verified preprocessing cache (about 2.8% additional latency reduction in paired replay).
 
 ## Tests
 

@@ -1,0 +1,8 @@
+{
+  "checkpoint": "THUSI-Lab/GameScaling-0.8B-S3",
+  "revision": "1b89640dcf2ef51fb53ad9338a0725e9622dd200",
+  "config_mtp_num_hidden_layers": 1,
+  "mtp_or_draft_tensor_count": 0,
+  "speculative_decoding_tested": false,
+  "reason": "No bundled MTP weights in the original pinned checkpoint; no compatible external drafter was supplied or validated. No unverified drafter was enabled."
+}

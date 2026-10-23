@@ -1,0 +1,147 @@
+{
+  "precision": "fp16",
+  "images": 6,
+  "history": 5,
+  "temperature": 1.0,
+  "max_tokens": 2048,
+  "prefill_step_size": 2048,
+  "pairs": [
+    {
+      "corpus": "production-crossroad",
+      "seed": 17,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 863.209832998109,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 804.9095830065198,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "production-crossroad",
+      "seed": 43,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 800.710291005089,
+          "output_sha256": "d056a6b172aeb4f4178ebb5d84ca28760c9c510c85fd55bbce9e2b5bfa5bdad7",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 31
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 810.3326249984093,
+          "output_sha256": "d056a6b172aeb4f4178ebb5d84ca28760c9c510c85fd55bbce9e2b5bfa5bdad7",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 31
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 17,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": false,
+          "elapsed_ms": 836.8974589975551,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": true,
+          "elapsed_ms": 831.003958999645,
+          "output_sha256": "8093a503d953e10f40c0c7df65ef90f67992eac4a564fedb8768d7cc41146baf",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        }
+      ]
+    },
+    {
+      "corpus": "recorded-doom",
+      "seed": 43,
+      "identical_output": true,
+      "variants": [
+        {
+          "preprocess": true,
+          "elapsed_ms": 829.1665409997222,
+          "output_sha256": "cf6645c02493ddc8ca2663bfe7f378a1e0fe431cddf36b0040137ac20c745dce",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "generation_tokens": 33
+        },
+        {
+          "preprocess": false,
+          "elapsed_ms": 813.7470840010792,
+          "output_sha256": "cf6645c02493ddc8ca2663bfe7f378a1e0fe431cddf36b0040137ac20c745dce",
+          "parsed": true,
+          "reasoning_chars": 0,
+          "final_text_event": false,
+          "images_in_context": 6,
+          "history_frames": 5,
+          "preprocess_cache_hits": 0,
+          "images_preprocessed": 6,
+          "generation_tokens": 33
+        }
+      ]
+    }
+  ],
+  "all_outputs_match": true,
+  "reasoning_seen": false,
+  "hardware": "Apple M5 Pro, 24 GB unified memory",
+  "date": "2026-10-23",
+  "scope": "Model inference and final-text callback; not production WebRTC delivery or a game score"
+}

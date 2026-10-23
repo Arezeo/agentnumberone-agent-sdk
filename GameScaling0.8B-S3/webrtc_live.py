@@ -30,6 +30,8 @@ ORIGIN=endpoint.origin(os.environ.get('ANO_GAMESCALING_ORIGIN','https://agentnum
 PUBLIC_URL=os.environ.get('ANO_GAMESCALING_PUBLIC_URL','ws://127.0.0.1:'+str(PORT)+'/control')
 VISION_REUSE=os.environ.get('ANO_GAMESCALING_VISION_REUSE','1')=='1'
 PREFIX_REUSE=os.environ.get('ANO_GAMESCALING_PREFIX_REUSE','1')=='1'
+PREPROCESS_REUSE=os.environ.get('ANO_GAMESCALING_PREPROCESS_REUSE','1')=='1'
+PREFILL_STEP_SIZE=2048  # Paired experiments did not support changing this default.
 OVERLAP=os.environ.get('ANO_GAMESCALING_OVERLAP','1')=='1'
 SYSTEM=build_system_prompt('AgentNumberOne screen-controlled challenge or game',rules='Follow the task, rules, player assignment and controls visible on the screen and the operator instructions. In Pixel Duel use WASD to move, mouse to aim, LB to attack, Space to dash. Challenge tasks may require pointer positioning, clicks, held buttons, dragging or keyboard input. Mouse X/Y are relative screen displacements in per-mille units, applied to the current commanded pointer; they are not absolute coordinates. Your actions are executed for 200ms. Use observations to check progress. No hidden game state is available.',key_bindings={'W':'move up','A':'move left','S':'move down','D':'move right','LB':'left mouse button / attack','RB':'right mouse button','Space':'dash or task-specific space key','Shift':'hold shift','Ctrl':'hold control','Enter':'enter','Back':'backspace','Mouse X Y':'move pointer relatively (X>0 right, Y>0 down); units are 1/1000 of screen width/height'},mouse_aim=False)
 # Preserve upstream sections exactly; all environment-specific text belongs in
@@ -115,7 +117,7 @@ class NativePolicy:
   assert all(value.dtype==dtype for _,value in parameters if mx.issubdtype(value.dtype,mx.floating)),'Parameter precision mismatch'
   self.parameter_dtypes=sorted({str(value.dtype) for _,value in parameters})
   self.history=[];self.identity=None
-  self.runtime=ReuseRuntime(vision=VISION_REUSE,system_prefix=PREFIX_REUSE)
+  self.runtime=ReuseRuntime(vision=VISION_REUSE,system_prefix=PREFIX_REUSE,preprocess=PREPROCESS_REUSE)
  def infer(self,frame,identity,instruction,pointer,emit_text=None):
   from mlx_vlm import stream_generate
   memory_identity=identity[:2]
@@ -134,7 +136,7 @@ class NativePolicy:
   images=[x[0] for x in self.history]+[image]
   options,stages=self.runtime.prepare(self.model,self.processor,prompt,images,SYSTEM)
   generation_start=time.monotonic()
-  generation=stream_generate(self.model,self.processor,prompt,image=None,max_tokens=2048,temperature=1.0,skip_special_tokens=False,**options)
+  generation=stream_generate(self.model,self.processor,prompt,image=None,max_tokens=2048,temperature=1.0,skip_special_tokens=False,prefill_step_size=PREFILL_STEP_SIZE,**options)
   for chunk in generation:
    last_chunk=chunk
    text+=chunk.text
@@ -160,7 +162,7 @@ async def main(on_ready=None):
  loop=asyncio.get_running_loop();executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='gamescaling-owner')
  policy=await loop.run_in_executor(executor,NativePolicy)
  metrics={'status':'waiting_for_browser','model':MODEL_NAME+' '+BACKEND,'prompt_profile':PROMPT_PROFILE,'source_revision':REVISIONS[MODEL_NAME],'run_id':RUN_ID,'native_action_generation':True,'gemma_action_head':False,'reasoning_enabled':True,'sampling_temperature':1.0,'max_output_tokens':2048,'native_text_streaming':True,'history_limit':5,'control_chunk_ms':200,'control_slots':6,'hold_watchdog_s':3,'application_receipts':False,'online_training':False,'pointer_initialization':[.5,.5],'perception_while_paused':True,'viewer_refresh_hz':5,'chat':'operator messages and image/action history condition native reasoning and actions; generated reasoning streams to bubble; optional reasoning may be empty'}
- metrics.update(vision_feature_reuse=VISION_REUSE,system_prefix_reuse=PREFIX_REUSE,inference_action_overlap=OVERLAP,precision=PRECISION,parameter_dtypes=getattr(policy,'parameter_dtypes',None),blank_frame_guard=True)
+ metrics.update(preprocessed_image_reuse=PREPROCESS_REUSE,prefill_step_size=PREFILL_STEP_SIZE,vision_feature_reuse=VISION_REUSE,system_prefix_reuse=PREFIX_REUSE,inference_action_overlap=OVERLAP,precision=PRECISION,parameter_dtypes=getattr(policy,'parameter_dtypes',None),blank_frame_guard=True)
  live_session=None
  def record(row):
   with (OUT/'events.jsonl').open('a') as f:f.write(json.dumps({'time':time.time(),'run_id':RUN_ID,'model':MODEL_NAME,**row})+'\n')
@@ -288,7 +290,7 @@ async def main(on_ready=None):
     if not started.done():started.set_result(None)
   def finish_decision(self,action,identity,latest,frame,timing,submitted,observed_active,queued,unsupported,executed,begin):
    metrics.update(last_policy_ms=timing['inference_ms'],last_history_frames=timing['history_frames'],last_action_parsed=action.parsed,last_action_noop=action.is_noop,last_commands_queued=queued,last_receive_to_end_ms=(time.monotonic()-latest[2])*1000)
-   metrics.update({key:timing.get(key) for key in ('prepare_ms','vision_ms','system_prefix_ms','vision_cache_hits','frames_encoded','images_in_context','system_prefix_tokens','system_prefix_hit','generation_ms','language_prefill_to_first_chunk_ms','after_first_chunk_ms','generation_tokens','generation_tps','first_chunk_ms')})
+   metrics.update({key:timing.get(key) for key in ('preprocess_cache_hits','images_preprocessed','prompt_tokens','prepare_ms','vision_ms','system_prefix_ms','vision_cache_hits','frames_encoded','images_in_context','system_prefix_tokens','system_prefix_hit','generation_ms','language_prefill_to_first_chunk_ms','after_first_chunk_ms','generation_tokens','generation_tps','first_chunk_ms')})
    record({'kind':'decision','session_id':self.session_id,'frame':frame,'instruction_id':identity[2],'prompt_profile':PROMPT_PROFILE,'noop':action.is_noop,'observed_active':observed_active,'context_revision':identity[3],'parsed':action.parsed,'mouse':action.mouse,'steps':action.steps,'queued':queued,'unsupported_tokens':unsupported,'execution_complete':executed,'history_is_commanded':True,'inference_started_at_monotonic':submitted,'action_started_at_monotonic':begin,'inference_action_overlap':OVERLAP,'receive_to_end_ms':metrics['last_receive_to_end_ms'],'queue_and_inference_ms':((begin or time.monotonic())-submitted)*1000,**timing})
   async def close(self):
    if self.action_task and self.action_task is not asyncio.current_task() and not self.action_task.done():
