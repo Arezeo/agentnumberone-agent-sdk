@@ -9,3 +9,9 @@ __pycache__/
 recordings/
 results/
 .DS_Store
+
+models/
+connection.txt
+*.safetensors
+*.gguf
+*.incomplete

@@ -1,0 +1,68 @@
+{
+  "False": {
+    "n": 6,
+    "mean_ms": 1202.2810971667848,
+    "end_to_end_mean_ms": 1212.1350346666684,
+    "first_chunk_mean_ms": 947.5780833334587,
+    "parsed": 6,
+    "frames_encoded": [
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+    ]
+  },
+  "True": {
+    "n": 6,
+    "mean_ms": 837.787284833515,
+    "end_to_end_mean_ms": 846.6397361665562,
+    "first_chunk_mean_ms": 583.414236333283,
+    "parsed": 6,
+    "frames_encoded": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "output_comparison": [
+    {
+      "decision": 1,
+      "identical_greedy_output": true
+    },
+    {
+      "decision": 2,
+      "identical_greedy_output": true
+    },
+    {
+      "decision": 3,
+      "identical_greedy_output": true
+    },
+    {
+      "decision": 4,
+      "identical_greedy_output": false
+    },
+    {
+      "decision": 5,
+      "identical_greedy_output": true
+    },
+    {
+      "decision": 6,
+      "identical_greedy_output": false
+    },
+    {
+      "decision": 7,
+      "identical_greedy_output": true
+    },
+    {
+      "decision": 8,
+      "identical_greedy_output": true
+    }
+  ],
+  "benchmark_sampling": "Greedy only for deterministic paired verification; live temperature remains 1.0",
+  "speedup": 1.4350672526686796
+}
