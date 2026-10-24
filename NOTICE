@@ -1,0 +1,14 @@
+Agent Number One Agent SDK
+Copyright 2026 Arezeo contributors
+
+GameScaling publisher client and prompts under GameScaling0.8B-S3/upstream/
+are from THUSI-Lab/GameScaling, under Apache-2.0. The original files, license,
+commit and SHA-256 hashes are preserved in that directory's SOURCE.json.
+
+Model checkpoints are not included. Downloaded checkpoints remain subject to
+their publisher's license and model card; setup pins each model's revision.
+
+Optional Doom assets are not included. doom/install_assets.py downloads the
+DFP Battle-1 scenario and its MIT license from isl-org/DirectFuturePrediction.
+ViZDoom and its bundled Freedoom assets have their own licenses. The local
+engine adapter and FP16 runtime are not the publisher's game executor.
