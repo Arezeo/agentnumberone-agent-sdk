@@ -24,7 +24,7 @@ def main():
     from mlx_vlm.utils import prepare_inputs, should_add_special_tokens
     from PIL import Image
     from mlx_runtime import ReuseRuntime
-    from webrtc_live import NativePolicy, SYSTEM, MODEL, PRECISION
+    from webrtc_live import NativePolicy, SYSTEM, MODEL, MODEL_SPEC, PRECISION, PREFILL_STEP_SIZE
     policy=NativePolicy()
     all_images=[Image.open(p).convert('RGB') for p in args.frames]
     images=all_images[:6]
@@ -50,7 +50,7 @@ def main():
         result=output.logits[:,-1,:].astype(mx.float32);mx.eval(result)
         return result
     cold=last_logits(full)
-    runtime=ReuseRuntime()
+    runtime=ReuseRuntime(preprocess=True)
     parity=[]
     # Repeat restoration to prove generation didn't mutate the saved prefix.
     for iteration in range(2):
@@ -77,14 +77,16 @@ def main():
     shifted_parity={'relative_l2':relative,'max_abs_diff':mx.max(mx.abs(diff)).item(),'same_top_token':mx.argmax(shifted_cold).item()==mx.argmax(shifted_warm).item(),**shifted_stages}
     assert relative<.003,'Shifted history diverged'
     rows=[]
-    for name,vision,prefix in [('baseline',False,False),('vision',True,False),('vision_and_system_prefix',True,True)]:
-        runtime=ReuseRuntime(vision=vision,system_prefix=prefix)
+    variants=[('baseline',False,False,False),('vision',True,False,False),
+              ('vision_and_system_prefix',True,True,False),('all_reuse',True,True,True)]
+    for name,vision,prefix,preprocess in variants:
+        runtime=ReuseRuntime(vision=vision,system_prefix=prefix,preprocess=preprocess)
         for repeat in range(args.repeats+1):
             start=time.monotonic()
             window=all_images[repeat:repeat+6] if len(all_images)>=args.repeats+6 else images
             options,stages=runtime.prepare(model,processor,prompt,window,SYSTEM)
             first=None;last=None;text=''
-            gen=stream_generate(model,processor,prompt,image=None,max_tokens=48,temperature=0.0,skip_special_tokens=False,**options)
+            gen=stream_generate(model,processor,prompt,image=None,max_tokens=48,temperature=0.0,skip_special_tokens=False,prefill_step_size=PREFILL_STEP_SIZE,**options)
             for chunk in gen:
                 if first is None:first=(time.monotonic()-start)*1000
                 last=chunk;text+=chunk.text
@@ -93,10 +95,12 @@ def main():
             rows.append(row)
             print(json.dumps({k:v for k,v in row.items() if k!='output'}),flush=True)
     summary={}
-    for name in ('baseline','vision','vision_and_system_prefix'):
+    for name,_,_,_ in variants:
         subset=[r for r in rows if r['variant']==name and not r['warmup']]
         summary[name]={'n':len(subset),'mean_ms':statistics.mean(r['elapsed_ms'] for r in subset),'first_chunk_mean_ms':statistics.mean(r['first_chunk_ms'] for r in subset)}
-    report={'model':MODEL.name,'precision':PRECISION,'images':6,'history':5,'source_sizes':[im.size for im in images],'benchmark_sampling':{'temperature':0.0,'max_tokens':48,'reasoning_prefill':'<think>','live_settings_changed':False},'parity':parity,'shifted_history_parity':shifted_parity,'summary':summary,'samples':rows,'sliding_windows':len(all_images)>=args.repeats+6,'note':'With at least repeats+6 frames, each measured window advances one frame, preserving six images while reusing five historical features. Six-frame mode repeats fixed images. This is not a gameplay score.'}
+    baseline_outputs={r['window']:r['output'] for r in rows if r['variant']=='baseline'}
+    for row in rows:row['output_matches_baseline']=row['output']==baseline_outputs[row['window']]
+    report={'model':MODEL_SPEC.name,'revision':MODEL_SPEC.revision,'precision':PRECISION,'parameter_dtypes':policy.parameter_dtypes,'images':6,'history':5,'source_sizes':[im.size for im in images],'peak_mlx_gib':mx.get_peak_memory()/1024**3,'benchmark_sampling':{'temperature':0.0,'max_tokens':48,'prefill_step_size':PREFILL_STEP_SIZE,'reasoning_prefill':'<think>','live_settings_changed':False},'parity':parity,'shifted_history_parity':shifted_parity,'summary':summary,'samples':rows,'sliding_windows':len(all_images)>=args.repeats+6,'note':'With at least repeats+6 frames, each measured window advances one frame, preserving six images while reusing five historical features. Six-frame mode repeats fixed images. This is not a gameplay score.'}
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2)+'\n')
     print('SUMMARY '+json.dumps(summary),flush=True)

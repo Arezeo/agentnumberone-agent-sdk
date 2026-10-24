@@ -1,4 +1,6 @@
-# GameScaling 0.8B-S3 over WebRTC
+# GameScaling 0.8B-S3 and 2B-S3 over WebRTC
+
+Start with the [portable FP16 kit guide](../docs/gamescaling-kit.md) for one-command setup, model selection, production pairing, live view, Doom and the full test sequence. This directory keeps its original name for compatibility; both sizes use the same optimized implementation.
 
 Run the publisher's native visual/action model on Apple Silicon and connect it to **[Agent Number One](https://agentnumberone.io/games)**. Test manually in [Control Basics](https://agentnumberone.io/challenges/control-basics) or [Game Lab](https://agentnumberone.io/lab), exchange instructions in the game chat, and inspect received video and model inputs at **[localhost:8767/live](http://127.0.0.1:8767/live)**.
 
@@ -7,6 +9,7 @@ This example includes our live integration, image preprocessing/feature reuse, r
 ## Model and input contract
 
 - Publisher: [`THUSI-Lab/GameScaling-0.8B-S3`](https://huggingface.co/THUSI-Lab/GameScaling-0.8B-S3), revision `1b89640dcf2ef51fb53ad9338a0725e9622dd200`.
+- Also supported: [`THUSI-Lab/GameScaling-2B-S3`](https://huggingface.co/THUSI-Lab/GameScaling-2B-S3), revision `0ef44e6569ebfeb310c5d5a5a973ae30cccba6ac`. Select it with `ANO_GAMESCALING_MODEL=2b-s3` or the root launcher `--model 2b-s3`.
 - Inference client and prompt contract: [THUSI-Lab/GameScaling](https://github.com/THUSI-Lab/GameScaling/tree/6764efabfbb4121d6e5d3cfcbc54dedf1469bf5a), pinned at `6764efabfbb4121d6e5d3cfcbc54dedf1469bf5a`.
 - **Five historical image/action turns plus the current image: six images at steady state.** Warm-up has fewer turns. Images are not dropped or replaced by a text summary, and this integration performs no extra resize. The publisher's image processor still applies its native patch/grid preprocessing.
 - Exact upstream output format and parser, `<think>` assistant prefix, temperature `1.0`, maximum `2048` generated tokens, six control slots at 30 Hz per 200 ms action chunk. The model may produce empty reasoning; conversation remains enabled.

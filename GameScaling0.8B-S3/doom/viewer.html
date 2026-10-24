@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>GameScaling Doom live view</title>
+<style>body{font:16px system-ui;margin:24px;background:#f8fafc;color:#18202c}main{display:flex;gap:16px}section{width:50%}img{width:100%;background:#111}pre{white-space:pre-wrap}h2{font-size:18px}</style>
+<h1>GameScaling · Doom</h1><p>Local reproduction · viewer refresh up to 5 Hz · inference rate is separate.</p>
+<main><section><h2>Engine video</h2><img id="frame" alt="Latest engine frame"></section>
+<section><h2>Selected model input</h2><img id="input" alt="Latest selected image"></section></main><pre id="state"></pre>
+<script>async function update(){try{const state=await(await fetch('/state')).json();document.getElementById('state').textContent=JSON.stringify(state,null,2);for(const key of ['frame','input']){const blob=await(await fetch('/'+key)).blob();if(!blob.size)continue;const img=document.getElementById(key),old=img.src;img.src=URL.createObjectURL(blob);if(old.startsWith('blob:'))URL.revokeObjectURL(old)}}catch(e){document.getElementById('state').textContent='Runner stopped or unavailable.'}setTimeout(update,200)}update()</script>

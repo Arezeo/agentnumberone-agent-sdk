@@ -1,0 +1,337 @@
+{
+  "date": "2026-10-23",
+  "host": {
+    "chip": "Apple M5 Pro",
+    "unified_memory_gib": 24,
+    "macos": "26.5.1",
+    "python": "3.12.14"
+  },
+  "cpu_tests": {
+    "example": 35,
+    "sdk": 18,
+    "distribution": 3,
+    "total": 56
+  },
+  "models": {
+    "GameScaling-0.8B-S3": {
+      "revision": "1b89640dcf2ef51fb53ad9338a0725e9622dd200",
+      "precision": "fp16",
+      "parameter_dtypes": [
+        "mlx.core.float16"
+      ],
+      "smoke": {
+        "parsed": true,
+        "noop": true,
+        "wall_ms": 3666.7272909980966,
+        "scope": "One real-model six-image FP16 call. No action applied; not game skill or sustained FPS."
+      },
+      "webrtc": {
+        "model": "GameScaling-0.8B-S3",
+        "revision": "1b89640dcf2ef51fb53ad9338a0725e9622dd200",
+        "precision": "fp16",
+        "parameter_dtypes": [
+          "mlx.core.float16"
+        ],
+        "decoded_frames": 150,
+        "decisions": 6,
+        "images_in_context": 6,
+        "last_action_parsed": true,
+        "last_action_noop": false,
+        "instruction_received": true,
+        "text_channel_open": true,
+        "native_text_messages_received": 6,
+        "input_envelopes_received": 14,
+        "input_types_received": [
+          "keyDown",
+          "keyUp",
+          "moveTo",
+          "releaseAll"
+        ],
+        "viewer_routes_ok": true,
+        "nonlocal_host_rejected": true,
+        "elapsed_seconds": 5.042012250007247,
+        "scope": "Native model + encoded synthetic video + real loopback WebRTC peers. No real game, browser, WAN or WSS proxy tested."
+      },
+      "doom": {
+        "reason": "decision_cap",
+        "decisions": 8,
+        "game_tics": 323,
+        "kills": 0.0,
+        "health": 100.0,
+        "mode": "realtime",
+        "parsed_decisions": 8,
+        "movement_decisions": 8,
+        "firing_decisions": 0,
+        "engine_receipts_match_requested": true
+      },
+      "replay": {
+        "benchmark_sampling": {
+          "temperature": 0.0,
+          "max_tokens": 48,
+          "prefill_step_size": 2048,
+          "reasoning_prefill": "<think>",
+          "live_settings_changed": false
+        },
+        "peak_mlx_gib": 8.263118844479322,
+        "summary": {
+          "baseline": {
+            "n": 2,
+            "mean_ms": 1261.6646460010088,
+            "first_chunk_mean_ms": 1012.8192079937435
+          },
+          "vision": {
+            "n": 2,
+            "mean_ms": 812.6415205042576,
+            "first_chunk_mean_ms": 583.2971659983741
+          },
+          "vision_and_system_prefix": {
+            "n": 2,
+            "mean_ms": 776.1676255031489,
+            "first_chunk_mean_ms": 544.0821874944959
+          },
+          "all_reuse": {
+            "n": 2,
+            "mean_ms": 744.6624795047683,
+            "first_chunk_mean_ms": 512.2092085002805
+          }
+        },
+        "parity": [
+          {
+            "iteration": 0,
+            "max_abs_diff": 0.0234375,
+            "relative_l2": 0.0026874374598264694,
+            "same_top_token": true,
+            "preprocess_reuse": true,
+            "preprocess_cache_hits": 0,
+            "images_preprocessed": 6,
+            "prepare_ms": 118.0270000040764,
+            "vision_ms": 457.42399999289773,
+            "system_prefix_ms": 66.26300000061747,
+            "vision_cache_hits": 0,
+            "frames_encoded": 6,
+            "images_in_context": 6,
+            "system_prefix_tokens": 829,
+            "system_prefix_hit": false,
+            "prompt_tokens": 6363,
+            "vision_reuse": true,
+            "system_prefix_reuse": true
+          },
+          {
+            "iteration": 1,
+            "max_abs_diff": 0.0234375,
+            "relative_l2": 0.0026874374598264694,
+            "same_top_token": true,
+            "preprocess_reuse": true,
+            "preprocess_cache_hits": 6,
+            "images_preprocessed": 0,
+            "prepare_ms": 26.407208992168307,
+            "vision_ms": 7.610833010403439,
+            "system_prefix_ms": 8.849833000567742,
+            "vision_cache_hits": 6,
+            "frames_encoded": 0,
+            "images_in_context": 6,
+            "system_prefix_tokens": 829,
+            "system_prefix_hit": true,
+            "prompt_tokens": 6363,
+            "vision_reuse": true,
+            "system_prefix_reuse": true
+          }
+        ],
+        "shifted_history_parity": {
+          "relative_l2": 0.002334230812266469,
+          "max_abs_diff": 0.0341796875,
+          "same_top_token": true,
+          "preprocess_reuse": true,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "prepare_ms": 38.235166008234955,
+          "vision_ms": 98.81875000428408,
+          "system_prefix_ms": 11.871041991980746,
+          "vision_cache_hits": 5,
+          "frames_encoded": 1,
+          "images_in_context": 6,
+          "system_prefix_tokens": 829,
+          "system_prefix_hit": true,
+          "prompt_tokens": 6363,
+          "vision_reuse": true,
+          "system_prefix_reuse": true
+        }
+      },
+      "all_sampled_greedy_outputs_match_baseline": true,
+      "native_text_snapshots_in_two_loopback_runs": [
+        0,
+        6
+      ]
+    },
+    "GameScaling-2B-S3": {
+      "revision": "0ef44e6569ebfeb310c5d5a5a973ae30cccba6ac",
+      "precision": "fp16",
+      "parameter_dtypes": [
+        "mlx.core.float16"
+      ],
+      "smoke": {
+        "parsed": true,
+        "noop": true,
+        "wall_ms": 3128.248207998695,
+        "scope": "One real-model six-image FP16 call. No action applied; not game skill or sustained FPS."
+      },
+      "webrtc": {
+        "model": "GameScaling-2B-S3",
+        "revision": "0ef44e6569ebfeb310c5d5a5a973ae30cccba6ac",
+        "precision": "fp16",
+        "parameter_dtypes": [
+          "mlx.core.float16"
+        ],
+        "decoded_frames": 260,
+        "decisions": 6,
+        "images_in_context": 6,
+        "last_action_parsed": true,
+        "last_action_noop": false,
+        "instruction_received": true,
+        "text_channel_open": true,
+        "native_text_messages_received": 0,
+        "input_envelopes_received": 12,
+        "input_types_received": [
+          "keyDown",
+          "keyUp",
+          "moveTo",
+          "releaseAll"
+        ],
+        "viewer_routes_ok": true,
+        "nonlocal_host_rejected": true,
+        "elapsed_seconds": 8.737229709004168,
+        "scope": "Native model + encoded synthetic video + real loopback WebRTC peers. No real game, browser, WAN or WSS proxy tested."
+      },
+      "doom": {
+        "reason": "decision_cap",
+        "decisions": 6,
+        "game_tics": 405,
+        "wall_seconds": 10.545599000004586,
+        "engine_advance_hz": 35.085726282579024,
+        "kills": 0.0,
+        "health": 100.0,
+        "mode": "realtime",
+        "parsed_decisions": 6,
+        "movement_decisions": 0,
+        "firing_decisions": 0,
+        "engine_receipts_match_requested": true
+      },
+      "replay": {
+        "benchmark_sampling": {
+          "temperature": 0.0,
+          "max_tokens": 48,
+          "prefill_step_size": 2048,
+          "reasoning_prefill": "<think>",
+          "live_settings_changed": false
+        },
+        "peak_mlx_gib": 10.78990920074284,
+        "summary": {
+          "baseline": {
+            "n": 2,
+            "mean_ms": 2850.0459374990896,
+            "first_chunk_mean_ms": 2294.394042000931
+          },
+          "vision": {
+            "n": 2,
+            "mean_ms": 1726.363728994329,
+            "first_chunk_mean_ms": 1182.4964584957343
+          },
+          "vision_and_system_prefix": {
+            "n": 2,
+            "mean_ms": 1634.1355420008767,
+            "first_chunk_mean_ms": 1087.674499998684
+          },
+          "all_reuse": {
+            "n": 2,
+            "mean_ms": 1565.665625501424,
+            "first_chunk_mean_ms": 1022.8993749988149
+          }
+        },
+        "parity": [
+          {
+            "iteration": 0,
+            "max_abs_diff": 0.0263671875,
+            "relative_l2": 0.0022906058002263308,
+            "same_top_token": true,
+            "preprocess_reuse": true,
+            "preprocess_cache_hits": 0,
+            "images_preprocessed": 6,
+            "prepare_ms": 120.55175000568852,
+            "vision_ms": 1229.186166994623,
+            "system_prefix_ms": 148.9625829999568,
+            "vision_cache_hits": 0,
+            "frames_encoded": 6,
+            "images_in_context": 6,
+            "system_prefix_tokens": 829,
+            "system_prefix_hit": false,
+            "prompt_tokens": 6363,
+            "vision_reuse": true,
+            "system_prefix_reuse": true
+          },
+          {
+            "iteration": 1,
+            "max_abs_diff": 0.0263671875,
+            "relative_l2": 0.0022906058002263308,
+            "same_top_token": true,
+            "preprocess_reuse": true,
+            "preprocess_cache_hits": 6,
+            "images_preprocessed": 0,
+            "prepare_ms": 75.28587499109562,
+            "vision_ms": 11.963375000050291,
+            "system_prefix_ms": 21.455708003486507,
+            "vision_cache_hits": 6,
+            "frames_encoded": 0,
+            "images_in_context": 6,
+            "system_prefix_tokens": 829,
+            "system_prefix_hit": true,
+            "prompt_tokens": 6363,
+            "vision_reuse": true,
+            "system_prefix_reuse": true
+          }
+        ],
+        "shifted_history_parity": {
+          "relative_l2": 0.0019340795697644353,
+          "max_abs_diff": 0.029296875,
+          "same_top_token": true,
+          "preprocess_reuse": true,
+          "preprocess_cache_hits": 5,
+          "images_preprocessed": 1,
+          "prepare_ms": 96.80408300482668,
+          "vision_ms": 228.9863749901997,
+          "system_prefix_ms": 12.227125000208616,
+          "vision_cache_hits": 5,
+          "frames_encoded": 1,
+          "images_in_context": 6,
+          "system_prefix_tokens": 829,
+          "system_prefix_hit": true,
+          "prompt_tokens": 6363,
+          "vision_reuse": true,
+          "system_prefix_reuse": true
+        }
+      },
+      "all_sampled_greedy_outputs_match_baseline": true,
+      "native_text_snapshots_in_two_loopback_runs": [
+        13,
+        0
+      ]
+    }
+  },
+  "limits": [
+    "Ordinary desktop and local VM workloads remained running; one MLX model at a time.",
+    "Two measured replay samples per variant after warm-up, fixed order, not a robust speedup study.",
+    "Eight screenshots from the local Doom check are not shipped in this source-only kit.",
+    "No fresh production browser, WSS proxy or manual game-skill certification in this release check."
+  ],
+  "fresh_extraction": {
+    "implementation_commit": "54d2dcf768cce8dfa8ccaa281e078be0bfd96e50",
+    "source_files_verified": 74,
+    "path_contains_spaces": true,
+    "git_checkout_present": false,
+    "new_environment_install": "passed",
+    "pip_check": "passed",
+    "cpu_tests_passed": 56,
+    "both_checkpoint_sha256": "passed",
+    "both_six_image_fp16_smoke_calls": "passed",
+    "weights_reused": true
+  }
+}

@@ -4,7 +4,19 @@ Connect your own visual agent to games on **[agentnumberone.io](https://agentnum
 
 [Browse games](https://agentnumberone.io/games) · [Control Basics](https://agentnumberone.io/challenges/control-basics) · [Game Lab](https://agentnumberone.io/lab) · [Developer documentation](https://agentnumberone.io/developers/games/live-video)
 
-The core SDK is a model-independent reference harness. Its default policy releases inputs and takes no gameplay action. The [GameScaling 0.8B-S3 example](GameScaling0.8B-S3/) provides a native MLX model integration with six-image history, text, reusable vision features, system-prefix state, overlapping controls, and live profiling. Model weights are downloaded separately.
+The core SDK is a model-independent reference harness. Its default policy releases inputs and takes no gameplay action. The [GameScaling 0.8B-S3 / 2B-S3 FP16 kit](docs/gamescaling-kit.md) provides a native MLX integration with six-image history, text, reusable vision features, system-prefix state, overlapping controls, and live profiling. Model weights are downloaded separately.
+
+## GameScaling FP16 kit
+
+Download and unzip the source asset from [Releases](https://github.com/Arezeo/agentnumberone-agent-sdk/releases), or clone this repository. On an Apple Silicon Mac with Python 3.12:
+
+```sh
+python3.12 gamescaling.py setup --model 0.8b-s3
+python3.12 gamescaling.py doctor --model 0.8b-s3 --verify-weights
+python3.12 gamescaling.py test
+```
+
+Use `--model 2b-s3` to install or select the 2B model. Setup fetches the original unquantized weights from pinned Hugging Face revisions and verifies their SHA-256. No weights are included in GitHub or the ZIP. [Continue with production connection, live view, Doom and end-to-end testing](docs/gamescaling-kit.md).
 
 ## Quick start
 
@@ -25,7 +37,7 @@ Set `--origin` to the exact page origin, including the port for local previews. 
 
 ## Model examples
 
-- [GameScaling 0.8B-S3](GameScaling0.8B-S3/): Apple Silicon FP16/BF16, native reasoning and actions over WebRTC, [live view and profiling](GameScaling0.8B-S3/#metrics-and-profiling).
+- [GameScaling 0.8B-S3 and 2B-S3](GameScaling0.8B-S3/): Apple Silicon FP16, native reasoning and actions over WebRTC, [portable setup and test procedures](docs/gamescaling-kit.md).
 
 ## Connect a model
 

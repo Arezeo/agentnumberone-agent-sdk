@@ -13,16 +13,18 @@ from aiohttp import web
 from connection import pairing_token
 from mlx_runtime import ReuseRuntime
 from action_chunk import execute_chunk
+from model_catalog import resolve_model, data_dir, model_path, validate_config
 from gamescaling import build_system_prompt,parse_action
 from gamescaling.keymaps import MOUSE_BUTTONS
 from gamescaling.action import split_reasoning
-MODEL_NAME='GameScaling-0.8B-S3'
-REVISIONS={MODEL_NAME:'1b89640dcf2ef51fb53ad9338a0725e9622dd200'}
-DATA=Path(os.environ.get('ANO_GAMESCALING_DATA',str(Path.home()/'Library/Application Support/AgentNumberOne/gamescaling')))
-OUT=DATA/'results/production-0.8b-s3'
+MODEL_SPEC=resolve_model()
+MODEL_NAME=MODEL_SPEC.name
+REVISIONS={MODEL_NAME:MODEL_SPEC.revision}
+DATA=data_dir()
+OUT=DATA/'results'/('production-'+MODEL_SPEC.key)
 PRECISION=os.environ.get('ANO_GAMESCALING_PRECISION','fp16')
 if PRECISION not in ('bf16','fp16'):raise ValueError('Use bf16 or fp16; this example does not quantize weights')
-MODEL=Path(os.environ.get('ANO_GAMESCALING_MODEL_PATH',str(DATA/'models/GameScaling-0.8B-S3-bf16')))
+MODEL=model_path(MODEL_SPEC)
 RUN_ID=str(uuid.uuid4())
 BACKEND='local MLX '+PRECISION.upper()+' (unquantized)'
 PORT=int(os.environ.get('ANO_GAMESCALING_PORT','8767'))
@@ -46,6 +48,8 @@ if PROMPT_PROFILE=='pixel-duel':
  SYSTEM=(ROOT/'prompts/pixel-duel-system.txt').read_text().rstrip('\n')
 elif PROMPT_PROFILE=='crossroad':
  SYSTEM=build_system_prompt('Crossroad',rules='You control the white chicken in a fixed third-person view. Increase the visible Score by hopping forward across lanes. Avoid moving cars and tree tiles; collect visible power-ups. When status says Cross the lanes, the game is already running: use movement keys, not Pause or Restart. The mouse does not steer the chicken or the camera. Each movement key press makes one tile hop, not continuous running. Release a movement key in an empty key group before pressing it again for another hop. Use actual movement key tokens in your six action groups when you intend to move. A collision ends the round; click Play again or Restart only when Round over is visible. Mouse X/Y are relative per-mille screen displacements from the current commanded pointer, not absolute coordinates. Follow operator instructions and visible feedback. No hidden game state is available.',key_bindings={'W':'one hop forward','A':'one hop left','S':'one hop backward','D':'one hop right','Up':'one hop forward','Left':'one hop left','Down':'one hop backward','Right':'one hop right','LB':'click a visible button, only when needed','Mouse X Y':'move pointer relatively; 1/1000 screen width/height; no camera control'},mouse_aim=False)
+elif PROMPT_PROFILE=='doom':
+ SYSTEM=(ROOT/'upstream/prompts/example_doom_battle1.txt').read_text().rstrip('\n')
 elif PROMPT_PROFILE!='general':raise ValueError('Unsupported prompt profile')
 
 
@@ -102,12 +106,12 @@ def visible_reasoning(text):
 
 class NativePolicy:
  def __init__(self):
+  OUT.mkdir(parents=True,exist_ok=True)
   from mlx_vlm import load
   import mlx.core as mx
   mx.set_cache_limit(256*1024*1024)
   config=json.loads((MODEL/'config.json').read_text())
-  assert not config.get('quantization') and not config.get('quantization_config'),'Source must not be quantized'
-  assert config['model_type']=='qwen3_5','This example supports the pinned Qwen3.5 checkpoint'
+  validate_config(config,MODEL_SPEC)
   self.model,self.processor=load(str(MODEL),lazy=True)
   dtype=mx.float16 if PRECISION=='fp16' else mx.bfloat16
   self.model.set_dtype(dtype);mx.eval(self.model.parameters())
@@ -118,7 +122,7 @@ class NativePolicy:
   self.parameter_dtypes=sorted({str(value.dtype) for _,value in parameters})
   self.history=[];self.identity=None
   self.runtime=ReuseRuntime(vision=VISION_REUSE,system_prefix=PREFIX_REUSE,preprocess=PREPROCESS_REUSE)
- def infer(self,frame,identity,instruction,pointer,emit_text=None):
+ def infer(self,frame,identity,instruction,pointer,emit_text=None,*,observation_text=None):
   from mlx_vlm import stream_generate
   memory_identity=identity[:2]
   if self.identity!=memory_identity:self.history=[];self.runtime.clear();self.identity=memory_identity
@@ -127,6 +131,8 @@ class NativePolicy:
   snapshot=OUT/'latest-model-input.tmp';image.save(snapshot,format='PNG');snapshot.replace(OUT/'latest-model-input.png')
   message='current game screen\nCurrent commanded pointer (unverified): '+json.dumps(pointer)
   if instruction:message+='\nOperator instruction: '+instruction
+  if observation_text is not None:
+   message=observation_text
   messages=[{'role':'system','content':SYSTEM}]
   for old_image,old_message,action in self.history:
    messages.extend([{'role':'user','content':[{'type':'text','text':old_message},{'type':'image'}]},{'role':'assistant','content':action}])
