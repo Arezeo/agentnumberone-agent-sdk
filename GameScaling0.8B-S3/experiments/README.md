@@ -80,3 +80,7 @@ Stop the live model first and use the environment from the [example README](../R
 ```
 
 Native validation fails its coverage check if all continuations omit reasoning; optional reasoning is never forced by injecting text into the assistant prefix. Results are hardware/workload dependent. The runner remains inspectable at [localhost:8767/live](http://127.0.0.1:8767/live) after restarting and reconnecting the production page.
+
+## Scheduling follow-up
+
+The [CPU/GPU prefetch scheduling experiment](scheduling.md) retained the current live defaults: conditional combined-work gains came with current-action delays, and the small sampled live trace had no potential reusable candidates. Raw measurements and the rejected variants are recorded separately from the verified preprocessing cache.
