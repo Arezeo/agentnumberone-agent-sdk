@@ -157,7 +157,11 @@
           "system_prefix_reuse": true
         }
       },
-      "all_sampled_greedy_outputs_match_baseline": true
+      "all_sampled_greedy_outputs_match_baseline": true,
+      "native_text_snapshots_in_two_loopback_runs": [
+        0,
+        6
+      ]
     },
     "GameScaling-2B-S3": {
       "revision": "0ef44e6569ebfeb310c5d5a5a973ae30cccba6ac",
@@ -305,7 +309,11 @@
           "system_prefix_reuse": true
         }
       },
-      "all_sampled_greedy_outputs_match_baseline": true
+      "all_sampled_greedy_outputs_match_baseline": true,
+      "native_text_snapshots_in_two_loopback_runs": [
+        13,
+        0
+      ]
     }
   },
   "limits": [
@@ -313,5 +321,17 @@
     "Two measured replay samples per variant after warm-up, fixed order, not a robust speedup study.",
     "Eight screenshots from the local Doom check are not shipped in this source-only kit.",
     "No fresh production browser, WSS proxy or manual game-skill certification in this release check."
-  ]
+  ],
+  "fresh_extraction": {
+    "implementation_commit": "54d2dcf768cce8dfa8ccaa281e078be0bfd96e50",
+    "source_files_verified": 74,
+    "path_contains_spaces": true,
+    "git_checkout_present": false,
+    "new_environment_install": "passed",
+    "pip_check": "passed",
+    "cpu_tests_passed": 56,
+    "both_checkpoint_sha256": "passed",
+    "both_six_image_fp16_smoke_calls": "passed",
+    "weights_reused": true
+  }
 }

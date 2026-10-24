@@ -17,11 +17,11 @@ Ordinary desktop apps, sync services and a local development VM remained running
 | Six-image context reached | Yes | Yes |
 | Operator instruction delivered | Yes | Yes |
 | Native text channel open | Yes | Yes |
-| Native text snapshots received in loopback run | See JSON | See JSON |
+| Native text snapshots received in two loopback runs | 0, then 6 | 13, then 0 |
 | Local viewer image/state routes | Passed | Passed |
 | Nonlocal viewer Host rejected | Yes | Yes |
 
-The initial standalone smoke fixtures generated valid **no-op** packets for both models. Native reasoning is optional: a valid packet does not require nonempty prose. Loopback checks use moving synthetic pixels; they exercise real MLX, codec, peer connections, instructions, controls and viewer HTTP routes. They bypass in-process WebSocket signaling; separate SDK tests cover token/Origin authentication. No production browser, WSS reverse proxy or WAN reachability was certified by these loopback checks.
+The initial standalone smoke fixtures generated valid **no-op** packets for both models. Native reasoning is optional and varied between stochastic runs: a valid packet does not require nonempty prose. Loopback checks use moving synthetic pixels; they exercise real MLX, codec, peer connections, instructions, controls and viewer HTTP routes. They bypass in-process WebSocket signaling; separate SDK tests cover token/Origin authentication. No production browser, WSS reverse proxy or WAN reachability was certified by these loopback checks.
 
 ## Cache replay
 
@@ -54,6 +54,8 @@ These short runs establish local execution, not Doom competence. In particular, 
 
 ## Fresh ZIP
 
-The release ZIP is built from committed blobs with a source hash manifest, without weights, credentials, logs, recordings or a virtual environment. Fresh-extraction verification is recorded in the release PR. Follow the [full setup and manual production procedure](../../docs/gamescaling-kit.md) to evaluate your own browser/network environment.
+An archive of implementation commit `54d2dcf768cce8dfa8ccaa281e078be0bfd96e50` was extracted to a new directory containing spaces, with no `.git` checkout. All 74 source hashes matched the embedded manifest. From that extraction, a new Python environment installed the declared requirements plus optional ViZDoom successfully. `pip check`, all 56 tests, both full checkpoint SHA-256 checks and both real six-image FP16 smoke calls passed. The existing verified weights were reused; there was no import dependency on the private research workspace or its environments. Subsequent release commits add this verification record only.
+
+The source ZIP is built from committed blobs with a source hash manifest, without weights, credentials, logs, recordings or a virtual environment. Follow the [full setup and manual production procedure](../../docs/gamescaling-kit.md) to evaluate your own browser/network environment.
 
 The [sanitized JSON evidence](../benchmarks/portable-kit-validation.json) contains model revisions, source-independent measurements, numerical checks and loopback outcomes. Raw local traces include native output and evaluator events and remain outside the repository.
