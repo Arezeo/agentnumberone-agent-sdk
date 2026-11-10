@@ -163,11 +163,13 @@ class ConversationTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 load(ANO_LLAMA_PROMPT_FILE=str(Path(directory) / "missing.txt"))
 
-    def test_a_changed_instruction_drops_the_old_frames(self):
+    def test_a_changed_instruction_keeps_the_history(self):
         policy = load()
         policy.BRAIN.busy = True
+        policy.BRAIN.history = [("earlier turn", "aGk=", "<|action_start|>0 0 0 ; W ; W ; W ; W ; W ; W<|action_end|>")]
         policy.decide(Frame(), Controls(CAPS, "Jump now"))
-        self.assertTrue(policy.BRAIN.reset)
+        self.assertFalse(policy.BRAIN.reset)
+        self.assertEqual(len(policy.BRAIN.history), 1)
 
 
 class FrameConversionTests(unittest.TestCase):

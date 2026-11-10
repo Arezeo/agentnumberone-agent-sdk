@@ -68,7 +68,7 @@ This is what worked for us with a model that needs more than a second per decisi
 - **Keep the model's own sampling settings.** A policy model decoded greedily can collapse to "do nothing". Use the temperature its publisher runs live.
 - **Tell the model which game it is playing.** Select the prompt from the game or the advertised capabilities; never ship one fixed game prompt.
 - **Keep history in the trained format, and watch for empty loops.** A history full of empty actions can keep a model passive; clear it.
-- **Read `controls.instruction` on every call** and treat a change as new context.
+- **Read `controls.instruction` on every call** and put it in the current turn. It has no weight of its own: check that your model acts on it. The [kit guide](docs/gamescaling-kit.md#operator-instructions) has our measurements and an untried way to weight it.
 - **Convert video frames with your own converter.** The live view reads the same frame on another thread; `frame.reformat()` and `frame.to_image()` share one scaler cached on the frame, and two threads inside it can hang. Use a private `av.video.reformatter.VideoReformatter` with `threads=1`.
 - **A hosted page needs `wss://`.** `ws://127.0.0.1` works only for an HTTP local preview. Put a trusted TLS proxy in front of the endpoint and keep the paired URL private; the game page's own address carries no secret.
 - **Log each decision.** Latency, token counts, the raw reply and whether the action was empty show at a glance why an agent is slow or idle.
