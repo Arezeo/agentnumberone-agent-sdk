@@ -109,6 +109,50 @@ Use `--model 2b-s3` for 2B and a new output directory for every run. The command
 
 `realtime` advances the 35 Hz engine while inference runs. `paused` stops it while inferring and is **diagnostic only**, not a real-time result. The six 30 Hz held states map over seven engine tics; mouse displacement uses a documented local 90° FOV mapping. The publisher did not release its game executor, sensitivity or a complete matched engine environment. This reproduces its prompt/scenario contract, **not exact paper gameplay or performance**. The model receives screenshots/history only; engine variables appear only in evaluator output. This minimal Doom runner executes inference/chunks sequentially; the WebRTC runner includes the overlap optimization.
 
+## 9B-S3 as a 4-bit GGUF through llama.cpp
+
+The MLX runner above covers 0.8B and 2B. The 9B checkpoint can be driven through a [llama.cpp](https://github.com/ggml-org/llama.cpp) server with [`llama_policy.py`](../GameScaling0.8B-S3/llama_policy.py), a policy for the reference runner. The kit does not download, convert or verify GGUF weights: bring your own conversion of the checkpoint and its `mmproj` file, under the publisher's license. Stop the MLX runner first; both use port 8767 and one model should own the GPU.
+
+```sh
+llama-server -m GameScaling-9B-S3.Q4_K_M.gguf --mmproj GameScaling-9B-S3.mmproj-f16.gguf \
+  -c 4096 --host 127.0.0.1 --port 8901
+.venv-gamescaling/bin/python GameScaling0.8B-S3/llama_run.py \
+  --public-url wss://YOUR-HOST/control --game auto
+```
+
+`llama_run.py` checks the server, keeps the pairing token in the same private `connection.txt` as the MLX runner, prints that file's location and never the token, and starts `scripts/remote-control/agent.py` with the policy. The paired URL stays the same across restarts while `--public-url` is unchanged. `--game` selects the system prompt: `auto` (Pixel Duel prompt on the Pixel Duel seat, otherwise general), `general`, `voxelcraft` or `pixel-duel`. A 4,096-token context holds the system prompt (about 900 tokens), up to five 640 × 360 frames with their turns (about 260 to 290 tokens each) and the reply.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `ANO_LLAMA_TEMPERATURE` | `1.0` | Sampling temperature. Do not set 0; see below. |
+| `ANO_LLAMA_HISTORY` | `5` | Frames a request may carry, the current one included, before the history is cleared. |
+| `ANO_LLAMA_NOOP_RESET` | `2` | Consecutive empty actions that clear the history. |
+| `ANO_LLAMA_IMAGE_W`, `ANO_LLAMA_IMAGE_H` | `640`, `360` | Image size sent to the model. |
+| `ANO_LLAMA_MAX_TOKENS` | `256` | Reply cap, including optional reasoning. |
+| `ANO_LLAMA_HOLD_WATCHDOG_S` | `3` | Releases inputs still held this long after a plan began. |
+| `ANO_LLAMA_SLOT` | `0` | Server slot, pinned so the prompt cache is reused. |
+| `ANO_LLAMA_LOG` | data folder, `results/llama-policy/decisions.jsonl` | One JSON line per decision: latency, tokens, raw action, reasoning. |
+
+### Why the policy is built this way
+
+These are the faults found in a first, simpler adapter, with the checks that showed them. Each check is a handful of samples on 2026-11-10, not a benchmark.
+
+- **Sample at temperature 1.0.** With greedy decoding the top choice is nearly always the empty action `0 0 0 ; ; ; ; ; ;`. On one "You died" frame, four prompts at temperature 0 all returned it, including one whose reasoning said to click Respawn. At 1.0, three of four samples on the same frame clicked.
+- **Name the game that is on screen.** The first adapter had a fixed Pixel Duel prompt while the page showed another game. Keep game text in the published prompt skeleton (`build_system_prompt`) and choose it per game.
+- **Do not let an empty history build up.** With one empty action in the history, none of four samples acted on that frame. The policy clears the history after two consecutive empty actions.
+- **Grow the history, then clear it.** A sliding window changes the prompt prefix every turn and forces the server to re-evaluate every image. Appending turns and clearing at five frames keeps the prefix cached: the median decision evaluated 257 new tokens.
+- **Never block `decide()`.** The reference runner sends a decision's actions only after `decide()` returns, so a policy that waits for the model inside it cannot play six 33 ms steps. The model runs on its own thread; `decide()` returns on every frame and plays the steps that are due. The last step stays held until the next plan, as in the MLX runner, with a watchdog release.
+- **Use the training vocabulary exactly.** `one` is the number-row key and `One` is F1; `LB`, `RB` and `MB` are held mouse buttons, not instant clicks.
+
+### What was measured, and the limits
+
+On an Apple M5 Pro with 24 GB, Homebrew llama.cpp build 11669, Q4_K_M weights and an f16 `mmproj`, one live Voxelcraft session on production made 847 decisions in about 50 minutes: median 1.67 s per decision (10th percentile 1.50 s, 90th 4.88 s, longest 8.07 s), 79 empty actions (9%) and none unparseable. Reasoning was written in 77 decisions, and those are among the slow ones. Generation ran at a median 33.7 tokens per second while the game rendered on the same GPU, and the median reply was 34 tokens. This is one session with one prompt; it says nothing about game skill.
+
+- **It is not real-time.** A plan covers 200 ms and a decision takes well over a second, so most of the time the agent is holding the last step of an old plan.
+- **Camera turning stops at the screen edge.** For pointer-locked games the page turns pointer movement into camera movement, and pointer positions are limited to the screen. In that session the commanded pointer sat on a screen edge for 139 of 847 decisions (16%), and there the agent could no longer turn that way.
+- **Operator instructions are passed, not proven.** The instruction is added to the user turn and clears the history when it changes. In three samples each of two instructions, this checkpoint showed no sign of following them.
+- **The GGUF conversion is not compared with the original weights**, and keys the runner rejects (function keys, for example) are skipped.
+
 ## What has been verified
 
 The [release verification record](../GameScaling0.8B-S3/docs/portable-kit-validation.md) separates clean-source installation, CPU/WebRTC tests, actual model calls, cache numerical checks and manual production results. Test success does not erase previous failures on browser games or prove this checkpoint generalizes beyond its training distribution.
