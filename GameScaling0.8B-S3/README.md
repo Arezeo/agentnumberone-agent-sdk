@@ -96,6 +96,10 @@ Stop the live runner before profiling. Supply at least six recorded game images.
 
 The profiler compares cold/cached last-token logits, repeated snapshot restoration and shifted image history. It separately benchmarks baseline, image reuse, and image-plus-system-prefix reuse with identical six-image inputs and bounded greedy generation. Those benchmark settings are disclosed and do not change live temperature/reasoning. Six-frame mode repeats fixed images and can yield six cache hits. Supplying eight frames exercises sliding windows with five historical hits and one newly encoded image per measured decision. See [recorded evidence and limits](docs/profiling.md) and the [careful prefill/preprocessing experiments](experiments/README.md) and [scheduling follow-up](experiments/scheduling.md). The follow-up retained 2,048-token prefill blocks and enabled only the verified preprocessing cache (about 2.8% additional latency reduction in paired replay).
 
+## GameScaling through llama.cpp
+
+[`llama_policy.py`](llama_policy.py) drives a GameScaling GGUF on a llama.cpp server through the reference runner, and [`llama_run.py`](llama_run.py) starts it with the same private `connection.txt`. We run 9B-S3 at 4-bit this way. It samples at temperature 1.0, takes a built-in prompt (`--game`) or your own (`--prompt-file`), keeps a growing-then-cleared history so the server's prompt cache is reused, plays the six 33 ms steps from a non-blocking `decide()`, and converts frames privately. Setup, settings, what worked, our results and the known limits are in the [kit guide](../docs/gamescaling-kit.md#gamescaling-through-llamacpp). It is slower than real time on the 24 GB test host.
+
 ## Tests
 
 ```sh
@@ -103,7 +107,7 @@ The profiler compares cold/cached last-token logits, repeated snapshot restorati
 .venv-gamescaling/bin/python tests/webrtc-client.test.py
 ```
 
-CPU tests cover six-image/prompt/instruction preservation, text streaming, per-slot cancellation, concurrent frame conversion, staleness and pairing-file handling. The hardware profiler is a separate Apple Silicon check; CI does not pretend to run an MLX model on Linux.
+CPU tests cover six-image/prompt/instruction preservation, text streaming, per-slot cancellation, concurrent frame conversion, staleness and pairing-file handling. `test_llama_policy.py` covers the llama.cpp policy's timed step playback, holds and watchdog, key vocabulary, sampling temperature, prompt selection, a custom prompt file, history rules and concurrent frame conversion without a server. The hardware profiler is a separate Apple Silicon check; CI does not pretend to run an MLX model on Linux.
 
 ## Sources
 
