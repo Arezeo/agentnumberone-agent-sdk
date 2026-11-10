@@ -191,12 +191,27 @@ Apple M5 Pro, 24 GB, Homebrew llama.cpp build 11669, 9B-S3 Q4_K_M with an f16 `m
 
 The agent walked, turned, attacked and clicked through the death dialog to respawn. This is one session of one game; it is not an evaluation of game skill.
 
+### Operator instructions
+
+The policy adds one line, `Operator instruction: ...`, to the current user turn and nowhere else. Earlier turns in the history keep the text they were sent with, and the model has no separate channel or weight for the instruction. A change in the instruction does not clear the history.
+
+What we measured (2026-11-10, one recorded Doom frame, temperature 1.0, five samples per cell, so a direction and not a benchmark):
+
+| Instruction | No history | Four earlier turns in the prompt |
+| --- | --- | --- |
+| "Move backward and do not shoot" | pressed `S` in 3 of 5 | pressed `S` in 1 of 5 |
+| "Strafe left and do not shoot" | pressed `A` in 2 of 5 | pressed `A` in 0 of 5 |
+
+With the earlier turns present the model repeated the keys it had already been pressing (`Space` appeared in all ten samples) and followed the instruction less often. Without an instruction the same frame produced `S` in 1 of 5 samples and never `A`, so the model does respond to direction words. It did not turn right when told to "turn right as far as you can". The earlier death-screen samples were confounded by the pull of the Respawn button and should not be read as "ignores instructions".
+
+The history stays, for continuity and because clearing it makes the next request slow. If you need the instruction to count for more, ways to weight it are to repeat it in the system prompt and again after the screenshot, or to drop the oldest turns when it changes. We have tried neither, so we do not know that they work; the policy sends the instruction as plain text for now.
+
 ### Known limits
 
 - **It is not real-time.** A plan covers 200 ms and a decision takes well over a second, so most of the time the agent is holding the last step of an old plan.
 - **The first request after each history clear is slow.** Those 168 requests took a median 4.83 s against 1.61 s for the other 771 without reasoning, about 7 of 40 minutes of model time, although they evaluate the same number of new tokens. We have not found the cause: one probe on a spare server slot was inconclusive because the live game was sharing the server.
 - **Camera turning stops at the screen edge.** For pointer-locked games the page turns pointer movement into camera movement, and pointer positions are limited to the screen. The commanded pointer sat on a screen edge for 157 of the 1,022 decisions (15%), and there the agent could no longer turn that way.
-- **Operator instructions are passed, not proven.** The instruction is added to the user turn and clears the history when it changes. In three samples each of two instructions, this checkpoint showed no sign of following them.
+- **Operator instructions are only partly followed.** They are plain text in the current turn, with no weight of their own; see [Operator instructions](#operator-instructions).
 - **The GGUF conversion is not compared with the original weights**, and keys the runner rejects (function keys, for example) are skipped.
 
 ## What has been verified

@@ -14,7 +14,8 @@ and it encodes what a slow native-action model needs on this runner:
    earlier frames with their actions. History only grows and is then cleared,
    so the server's prompt cache stays valid and each decision evaluates one
    new image. Two empty actions in a row also clear it, because an all-empty
-   history keeps the model answering empty.
+   history keeps the model answering empty. A change in the operator
+   instruction does not clear it.
 4. Execution: the runner sends a decision's actions only after `decide()`
    returns. The model therefore runs on its own thread; `decide()` returns at
    once on every video frame and plays the six 33 ms steps of the latest plan
@@ -332,9 +333,9 @@ def _decide(frame, controls):
 
     instruction = (controls.instruction or "").strip()
     if instruction != STATE["instruction"]:
-        # A new or cleared operator message: drop the old frames so the earlier plan does not outvote it.
+        # A new or cleared operator message. The history is kept, so the message is plain text in the
+        # current turn with no extra weight; see "Operator instructions" in docs/gamescaling-kit.md.
         STATE["instruction"] = instruction
-        BRAIN.reset = True
         _log(kind="instruction", text=instruction[:200])
 
     picked = False
