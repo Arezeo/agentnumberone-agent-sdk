@@ -20,23 +20,26 @@ def load(**env):
     """A fresh policy module, so module state never leaks between tests."""
     scratch = tempfile.mkdtemp(prefix="llama-policy-test-")
     os.environ["ANO_LLAMA_LOG"] = str(Path(scratch) / "decisions.jsonl")
-    for key in ("ANO_LLAMA_GAME", "ANO_LLAMA_TEMPERATURE", "ANO_LLAMA_HISTORY", "ANO_LLAMA_NOOP_RESET"):
+    for key in ("ANO_LLAMA_GAME", "ANO_LLAMA_TEMPERATURE", "ANO_LLAMA_HISTORY", "ANO_LLAMA_NOOP_RESET",
+                "ANO_LLAMA_PROMPT_FILE"):
         os.environ.pop(key, None)
     os.environ.update(env)
     spec = importlib.util.spec_from_file_location("llama_policy_under_test", ROOT / "GameScaling0.8B-S3/llama_policy.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.print = lambda *args, **kwargs: None     # the decision log is not test output
+    module._frame_image = lambda frame: Frame()     # no video library in the contract tests
     return module
 
 
 class Frame:
-    def reformat(self, width, height, format):
-        self.size = (width, height)
-        return self
+    """Stands in for both the runner's frame and the converted one."""
+
+    def reformat(self, *args, **kwargs):
+        raise AssertionError("the policy must not use the frame's shared converter")
 
     def to_image(self):
-        return Image.new("RGB", self.size, (30, 60, 90))
+        return Image.new("RGB", (64, 36), (30, 60, 90))
 
 
 def reply(content, reasoning=""):
@@ -147,11 +150,43 @@ class ConversationTests(unittest.TestCase):
         self.assertNotIn("Pixel Duel", policy.PROMPTS["general"])
         self.assertEqual(load(ANO_LLAMA_GAME="voxelcraft")._profile(frozenset(DUEL_CAPS)), "voxelcraft")
 
+    def test_your_own_prompt_file_overrides_the_built_in_games(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "my-game.txt"
+            path.write_text("You are playing My Game.\n")
+            policy = load(ANO_LLAMA_PROMPT_FILE=str(path), ANO_LLAMA_GAME="voxelcraft")
+            self.assertEqual(policy._profile(frozenset(DUEL_CAPS)), "custom")
+            self.assertEqual(policy.PROMPTS["custom"], "You are playing My Game.")
+            path.write_text("  \n")
+            with self.assertRaises(ValueError):
+                load(ANO_LLAMA_PROMPT_FILE=str(path))
+            with self.assertRaises(OSError):
+                load(ANO_LLAMA_PROMPT_FILE=str(Path(directory) / "missing.txt"))
+
     def test_a_changed_instruction_drops_the_old_frames(self):
         policy = load()
         policy.BRAIN.busy = True
         policy.decide(Frame(), Controls(CAPS, "Jump now"))
         self.assertTrue(policy.BRAIN.reset)
+
+
+class FrameConversionTests(unittest.TestCase):
+    def test_conversion_is_private_so_the_live_view_can_use_the_same_frame(self):
+        import av
+        from concurrent.futures import ThreadPoolExecutor
+        os.environ.pop("ANO_LLAMA_PROMPT_FILE", None)
+        spec = importlib.util.spec_from_file_location("llama_policy_real_frames", ROOT / "GameScaling0.8B-S3/llama_policy.py")
+        policy = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(policy)
+        source = av.VideoFrame.from_image(Image.new("RGB", (1280, 720), (200, 40, 10)))
+
+        def convert(_):
+            small = policy._frame_image(source)
+            return small.width, small.height, small.format.name, small.to_image().getpixel((5, 5))
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(convert, range(40), timeout=30))
+        self.assertEqual(set(results), {(*policy.IMAGE_SIZE, "rgb24", (200, 40, 10))})
+        self.assertEqual((source.width, source.height, source.format.name), (1280, 720, "rgb24"))
 
 
 if __name__ == "__main__":

@@ -8,6 +8,8 @@ and it encodes what a slow native-action model needs on this runner:
    the top choice is nearly always the empty action and the agent freezes.
 2. Prompt: chosen per game, never fixed to one. `auto` uses the Pixel Duel
    prompt only on the Pixel Duel control surface, otherwise a general one.
+   For your own game, point ANO_LLAMA_PROMPT_FILE at a prompt you wrote with
+   `build_system_prompt`.
 3. Context: the kit's user turn (commanded pointer, operator instruction) and
    earlier frames with their actions. History only grows and is then cleared,
    so the server's prompt cache stays valid and each decision evaluates one
@@ -20,6 +22,9 @@ and it encodes what a slow native-action model needs on this runner:
    step stays held until the next plan, with a watchdog release.
 5. Keys use the exact training vocabulary (`one` = Digit1, `One` = F1), mouse
    buttons are real holds, and scroll is sent.
+6. Frames are converted with a private single-threaded converter. The live
+   view converts the same frame on another thread, and a frame's own
+   `reformat()` shares one cached scaler: two threads inside it can hang.
 
 Never raises: a bad action must not close the control channel.
 """
@@ -45,6 +50,7 @@ def _data_dir():
 
 URL = os.environ.get("ANO_LLAMA_URL", "http://127.0.0.1:8901/v1/chat/completions")
 GAME = os.environ.get("ANO_LLAMA_GAME", "auto")       # auto | general | voxelcraft | pixel-duel
+PROMPT_FILE = os.environ.get("ANO_LLAMA_PROMPT_FILE", "")   # your own system prompt; overrides GAME
 TEMPERATURE = float(os.environ.get("ANO_LLAMA_TEMPERATURE", "1.0"))
 MAX_TOKENS = int(os.environ.get("ANO_LLAMA_MAX_TOKENS", "256"))
 MAX_HISTORY = int(os.environ.get("ANO_LLAMA_HISTORY", "5"))   # frames per request before the history is cleared
@@ -99,6 +105,11 @@ def _prompts():
         out["pixel-duel"] = (ROOT / "prompts" / "pixel-duel-system.txt").read_text().rstrip("\n")
     except OSError:
         out["pixel-duel"] = out["general"]
+    if PROMPT_FILE:
+        # A missing or empty file must stop the runner: playing with the wrong prompt is worse.
+        out["custom"] = Path(PROMPT_FILE).expanduser().read_text().rstrip("\n")
+        if not out["custom"].strip():
+            raise ValueError("ANO_LLAMA_PROMPT_FILE is empty: " + PROMPT_FILE)
     return out
 
 
@@ -136,6 +147,8 @@ def _log(**event):
 
 
 def _profile(capabilities):
+    if "custom" in PROMPTS:
+        return "custom"
     if GAME != "auto":
         return GAME if GAME in PROMPTS else "general"
     # Pixel Duel's seat advertises only held controls; every other surface has click.
@@ -147,6 +160,19 @@ def _post(payload):
                                      headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=90) as response:
         return json.load(response)
+
+
+def _frame_image(frame):
+    """The frame scaled to the model's input size, as a new rgb24 frame.
+
+    Never call `frame.reformat()` or `frame.to_image()` on the runner's frame:
+    they share one scaler cached on that frame, the live view uses it from
+    another thread, and two threads inside it can block forever. That froze a
+    live session until the runner's inference timeout closed it.
+    """
+    from av.video.reformatter import VideoReformatter
+    return VideoReformatter().reformat(frame, width=IMAGE_SIZE[0], height=IMAGE_SIZE[1],
+                                       format="rgb24", threads=1)
 
 
 def _user(text, image):
@@ -335,13 +361,13 @@ def _decide(frame, controls):
 
     # Ask for the next plan on a frame that arrived after the current plan began.
     if not picked and not BRAIN.busy:
-        small = frame.reformat(width=IMAGE_SIZE[0], height=IMAGE_SIZE[1], format="rgb24")
+        small = _frame_image(frame)
+        buffer = io.BytesIO()
+        small.to_image().save(buffer, format="JPEG", quality=85)   # already rgb24: no scaler involved
         try:
             controls.show_model_input(small)
         except Exception:
             pass
-        buffer = io.BytesIO()
-        small.to_image().save(buffer, format="JPEG", quality=85)
         BRAIN.submit({"image": base64.b64encode(buffer.getvalue()).decode(),
                       "pointer": [round(v, 3) for v in STATE["pointer"]],
                       "instruction": instruction,

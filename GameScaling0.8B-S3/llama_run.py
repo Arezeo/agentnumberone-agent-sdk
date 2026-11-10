@@ -44,18 +44,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--public-url", required=True, type=control_url,
                         help="Endpoint the game page connects to, without a token. A hosted HTTPS page needs trusted wss://")
-    parser.add_argument("--game", choices=GAMES, default="auto")
+    parser.add_argument("--game", choices=GAMES, default="auto", help="Built-in system prompt")
+    parser.add_argument("--prompt-file", type=Path,
+                        help="Your own system prompt for another game; overrides --game")
     parser.add_argument("--server", default="http://127.0.0.1:8901", help="llama.cpp server base URL")
     parser.add_argument("--origin", default="https://agentnumberone.io")
     parser.add_argument("--port", type=int, default=8767)
     args = parser.parse_args()
+    if args.prompt_file and not (args.prompt_file.is_file() and args.prompt_file.read_text().strip()):
+        raise SystemExit("--prompt-file must be a readable, non-empty text file: " + str(args.prompt_file))
     if not server_ready(args.server):
         raise SystemExit("No llama.cpp server answered at " + args.server + "/health. Start it first.")
     connection = data_dir() / "connection.txt"
     token = pairing_token(connection, args.public_url)
     env = {**os.environ, "PYTHONUNBUFFERED": "1", "ARENA_CONTROL_TOKEN": token,
            "ANO_LLAMA_URL": args.server.rstrip("/") + "/v1/chat/completions", "ANO_LLAMA_GAME": args.game}
-    print(json.dumps({"status": "starting", "game": args.game, "connection_file": str(connection),
+    if args.prompt_file:
+        env["ANO_LLAMA_PROMPT_FILE"] = str(args.prompt_file.resolve())
+    print(json.dumps({"status": "starting", "game": "custom" if env.get("ANO_LLAMA_PROMPT_FILE") else args.game,
+                      "connection_file": str(connection),
                       "live_view": "http://127.0.0.1:%d/live" % args.port}), flush=True)
     # The runner prints its own pairing line with the token; keep it out of this terminal and any log.
     process = subprocess.Popen(

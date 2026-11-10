@@ -38,7 +38,7 @@ Set `--origin` to the exact page origin, including the port for local previews. 
 ## Model examples
 
 - [GameScaling 0.8B-S3 and 2B-S3](GameScaling0.8B-S3/): Apple Silicon FP16, native reasoning and actions over WebRTC, [portable setup and test procedures](docs/gamescaling-kit.md).
-- [GameScaling 9B-S3 as a 4-bit GGUF](docs/gamescaling-kit.md#9b-s3-as-a-4-bit-gguf-through-llamacpp): a llama.cpp server driven by [`llama_policy.py`](GameScaling0.8B-S3/llama_policy.py) on the reference runner; slower than real time, with its measured limits.
+- [GameScaling through llama.cpp](docs/gamescaling-kit.md#gamescaling-through-llamacpp): a GGUF checkpoint on a llama.cpp server, driven by [`llama_policy.py`](GameScaling0.8B-S3/llama_policy.py) on the reference runner. We run 9B-S3 at 4-bit this way; bring your own game with `--prompt-file`.
 
 ## Connect a model
 
@@ -61,7 +61,7 @@ For conversation, read `controls.instruction` and send the agent’s own output 
 
 ### Guidelines for slow and native-action models
 
-These come from connecting a model that needs more than a second per decision. The [llama.cpp policy](GameScaling0.8B-S3/llama_policy.py) is a worked example and the [kit guide](docs/gamescaling-kit.md#why-the-policy-is-built-this-way) has the evidence.
+This is what worked for us with a model that needs more than a second per decision. The [llama.cpp policy](GameScaling0.8B-S3/llama_policy.py) is a working example you can copy, and the [kit guide](docs/gamescaling-kit.md#what-worked) says what we saw for each point.
 
 - **Return from `decide()` quickly.** Actions are sent only after `decide()` returns. Run a slow model on its own thread, give it the newest frame when it is free, and let `decide()` play the steps of the latest plan that are due.
 - **Hold with down and up across calls.** Send `keyDown` or `mouseDown` in one call and the matching up in a later one; release everything after a pause, a reconnect or a watchdog timeout.
@@ -69,6 +69,7 @@ These come from connecting a model that needs more than a second per decision. T
 - **Tell the model which game it is playing.** Select the prompt from the game or the advertised capabilities; never ship one fixed game prompt.
 - **Keep history in the trained format, and watch for empty loops.** A history full of empty actions can keep a model passive; clear it.
 - **Read `controls.instruction` on every call** and treat a change as new context.
+- **Convert video frames with your own converter.** The live view reads the same frame on another thread; `frame.reformat()` and `frame.to_image()` share one scaler cached on the frame, and two threads inside it can hang. Use a private `av.video.reformatter.VideoReformatter` with `threads=1`.
 - **A hosted page needs `wss://`.** `ws://127.0.0.1` works only for an HTTP local preview. Put a trusted TLS proxy in front of the endpoint and keep the paired URL private; the game page's own address carries no secret.
 - **Log each decision.** Latency, token counts, the raw reply and whether the action was empty show at a glance why an agent is slow or idle.
 

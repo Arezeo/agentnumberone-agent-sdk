@@ -109,9 +109,13 @@ Use `--model 2b-s3` for 2B and a new output directory for every run. The command
 
 `realtime` advances the 35 Hz engine while inference runs. `paused` stops it while inferring and is **diagnostic only**, not a real-time result. The six 30 Hz held states map over seven engine tics; mouse displacement uses a documented local 90° FOV mapping. The publisher did not release its game executor, sensitivity or a complete matched engine environment. This reproduces its prompt/scenario contract, **not exact paper gameplay or performance**. The model receives screenshots/history only; engine variables appear only in evaluator output. This minimal Doom runner executes inference/chunks sequentially; the WebRTC runner includes the overlap optimization.
 
-## 9B-S3 as a 4-bit GGUF through llama.cpp
+## GameScaling through llama.cpp
 
-The MLX runner above covers 0.8B and 2B. The 9B checkpoint can be driven through a [llama.cpp](https://github.com/ggml-org/llama.cpp) server with [`llama_policy.py`](../GameScaling0.8B-S3/llama_policy.py), a policy for the reference runner. The kit does not download, convert or verify GGUF weights: bring your own conversion of the checkpoint and its `mmproj` file, under the publisher's license. Stop the MLX runner first; both use port 8767 and one model should own the GPU.
+The MLX runner above covers 0.8B and 2B. [`llama_policy.py`](../GameScaling0.8B-S3/llama_policy.py) drives a GameScaling GGUF on a [llama.cpp](https://github.com/ggml-org/llama.cpp) server through the reference runner. We run 9B-S3 this way at 4-bit (Q4_K_M weights with an f16 `mmproj`) on the 24 GB test host. The kit does not download, convert or verify GGUF weights: bring your own conversion of a checkpoint and its `mmproj` file, under the publisher's license.
+
+### Run it
+
+Stop the MLX runner first; both use port 8767 and one model should own the GPU. Use the kit environment, or any Python 3.12 environment with `scripts/remote-control/requirements.txt` and Pillow.
 
 ```sh
 llama-server -m GameScaling-9B-S3.Q4_K_M.gguf --mmproj GameScaling-9B-S3.mmproj-f16.gguf \
@@ -120,11 +124,37 @@ llama-server -m GameScaling-9B-S3.Q4_K_M.gguf --mmproj GameScaling-9B-S3.mmproj-
   --public-url wss://YOUR-HOST/control --game auto
 ```
 
-`llama_run.py` checks the server, keeps the pairing token in the same private `connection.txt` as the MLX runner, prints that file's location and never the token, and starts `scripts/remote-control/agent.py` with the policy. The paired URL stays the same across restarts while `--public-url` is unchanged. `--game` selects the system prompt: `auto` (Pixel Duel prompt on the Pixel Duel seat, otherwise general), `general`, `voxelcraft` or `pixel-duel`. A 4,096-token context holds the system prompt (about 900 tokens), up to five 640 × 360 frames with their turns (about 260 to 290 tokens each) and the reply.
+`llama_run.py` checks the server, keeps the pairing token in the same private `connection.txt` as the MLX runner, prints that file's location and never the token, and starts `scripts/remote-control/agent.py` with the policy. The paired URL stays the same across restarts while `--public-url` is unchanged. Pair and watch exactly as in [Production WebRTC connection](#production-webrtc-connection). A 4,096-token context holds the system prompt (about 900 tokens), up to five 640 × 360 frames with their turns (about 260 to 290 tokens each) and the reply.
+
+### Use it for your own game
+
+`--game` selects a built-in system prompt: `auto` (the Pixel Duel prompt on the Pixel Duel seat, otherwise the general one), `general`, `voxelcraft` or `pixel-duel`. For any other game, write the prompt once and pass it with `--prompt-file`:
+
+```sh
+.venv-gamescaling/bin/python - > my-game-prompt.txt <<'PY'
+import sys
+sys.path.insert(0, "GameScaling0.8B-S3/upstream")
+from gamescaling import build_system_prompt
+print(build_system_prompt(
+    "My Game",
+    rules="Reach the exit of each level. Spikes and enemies cost a life.",
+    key_bindings={"A": "move left", "D": "move right", "Space": "jump", "LB": "attack"},
+    mouse_aim=False))
+PY
+.venv-gamescaling/bin/python GameScaling0.8B-S3/llama_run.py \
+  --public-url wss://YOUR-HOST/control --prompt-file my-game-prompt.txt
+```
+
+`build_system_prompt` keeps the publisher's prompt skeleton, which the checkpoints rely on for their output tags; put only the game's name, rules and keys into it. Name keys in the training vocabulary (`W`, `Space`, `Shift`, `LB`, `RB`, `one` for the number-row 1). Say what the mouse does in that game, and how to leave dialogs such as a death or pause screen. A missing or empty prompt file stops the runner instead of falling back to another game's prompt.
+
+### Settings
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `ANO_LLAMA_TEMPERATURE` | `1.0` | Sampling temperature. Do not set 0; see below. |
+| `ANO_LLAMA_URL` | `http://127.0.0.1:8901/v1/chat/completions` | Chat endpoint of the llama.cpp server. `llama_run.py --server` sets it. |
+| `ANO_LLAMA_GAME` | `auto` | Built-in prompt. `llama_run.py --game` sets it. |
+| `ANO_LLAMA_PROMPT_FILE` | unset | Your own system prompt; overrides the built-in ones. `llama_run.py --prompt-file` sets it. |
+| `ANO_LLAMA_TEMPERATURE` | `1.0` | Sampling temperature. Keep it at 1.0. |
 | `ANO_LLAMA_HISTORY` | `5` | Frames a request may carry, the current one included, before the history is cleared. |
 | `ANO_LLAMA_NOOP_RESET` | `2` | Consecutive empty actions that clear the history. |
 | `ANO_LLAMA_IMAGE_W`, `ANO_LLAMA_IMAGE_H` | `640`, `360` | Image size sent to the model. |
@@ -133,23 +163,39 @@ llama-server -m GameScaling-9B-S3.Q4_K_M.gguf --mmproj GameScaling-9B-S3.mmproj-
 | `ANO_LLAMA_SLOT` | `0` | Server slot, pinned so the prompt cache is reused. |
 | `ANO_LLAMA_LOG` | data folder, `results/llama-policy/decisions.jsonl` | One JSON line per decision: latency, tokens, raw action, reasoning. |
 
-### Why the policy is built this way
+### What worked
 
-These are the faults found in a first, simpler adapter, with the checks that showed them. Each check is a handful of samples on 2026-11-10, not a benchmark.
+These are the choices the policy makes, each with what we saw. The checks behind them are small; treat them as a starting point for your own model.
 
-- **Sample at temperature 1.0.** With greedy decoding the top choice is nearly always the empty action `0 0 0 ; ; ; ; ; ;`. On one "You died" frame, four prompts at temperature 0 all returned it, including one whose reasoning said to click Respawn. At 1.0, three of four samples on the same frame clicked.
-- **Name the game that is on screen.** The first adapter had a fixed Pixel Duel prompt while the page showed another game. Keep game text in the published prompt skeleton (`build_system_prompt`) and choose it per game.
-- **Do not let an empty history build up.** With one empty action in the history, none of four samples acted on that frame. The policy clears the history after two consecutive empty actions.
-- **Grow the history, then clear it.** A sliding window changes the prompt prefix every turn and forces the server to re-evaluate every image. Appending turns and clearing at five frames keeps the prefix cached: the median decision evaluated 257 new tokens.
-- **Never block `decide()`.** The reference runner sends a decision's actions only after `decide()` returns, so a policy that waits for the model inside it cannot play six 33 ms steps. The model runs on its own thread; `decide()` returns on every frame and plays the steps that are due. The last step stays held until the next plan, as in the MLX runner, with a watchdog release.
-- **Use the training vocabulary exactly.** `one` is the number-row key and `One` is F1; `LB`, `RB` and `MB` are held mouse buttons, not instant clicks.
+- **Sample at temperature 1.0**, the publisher's live setting. Decoded greedily, the model's top choice is nearly always the empty action `0 0 0 ; ; ; ; ; ;`: on one frame all four greedy samples were empty, and three of four acted at 1.0.
+- **Give the model a prompt for the game on screen**, built on the published skeleton.
+- **Send earlier frames with their actions, growing then clearing.** Appending turns keeps the prompt prefix identical, so the server reuses its cache and the median decision evaluated 257 new tokens. A sliding window would re-evaluate every image on every turn.
+- **Clear the history after two empty actions in a row.** With an empty action in the history the model stayed empty; starting fresh got it acting again.
+- **Keep `decide()` non-blocking.** The reference runner sends a decision's actions only after `decide()` returns. The model runs on its own thread, and `decide()` returns on every frame and plays the 33 ms steps that are due. The last step stays held until the next plan, as in the MLX runner, with a watchdog release.
+- **Use the training vocabulary exactly.** `one` is the number-row key and `One` is F1; `LB`, `RB` and `MB` are held mouse buttons, pressed and released across steps.
+- **Convert frames with a private converter.** The live view reads the same video frame on another thread, and a frame's own `reformat()` shares one cached scaler. Two threads inside it froze a session of ours until the inference timeout closed it. The policy uses its own single-threaded `VideoReformatter`, as the MLX runner does.
+- **Log every decision.** The JSON lines show at a glance whether an agent is slow, idle, or stuck.
 
-### What was measured, and the limits
+### Results on our machine
 
-On an Apple M5 Pro with 24 GB, Homebrew llama.cpp build 11669, Q4_K_M weights and an f16 `mmproj`, one live Voxelcraft session on production made 847 decisions in about 50 minutes: median 1.67 s per decision (10th percentile 1.50 s, 90th 4.88 s, longest 8.07 s), 79 empty actions (9%) and none unparseable. Reasoning was written in 77 decisions, and those are among the slow ones. Generation ran at a median 33.7 tokens per second while the game rendered on the same GPU, and the median reply was 34 tokens. This is one session with one prompt; it says nothing about game skill.
+Apple M5 Pro, 24 GB, Homebrew llama.cpp build 11669, 9B-S3 Q4_K_M with an f16 `mmproj`, Voxelcraft on production with the `voxelcraft` prompt, 2026-11-10. In about 41 minutes of play the policy made 1,022 decisions:
+
+| Measure | Value |
+| --- | --- |
+| Time per decision | median 1.67 s; 10th percentile 1.50 s, 90th 4.94 s, longest 8.87 s |
+| Generation speed | median 33.5 tokens per second, with the game rendering on the same GPU |
+| Reply length | median 34 tokens |
+| Empty actions | 91 (9%) |
+| Unparseable replies | 0 |
+| Replies with written reasoning | 83, median 3.9 s |
+
+The agent walked, turned, attacked and clicked through the death dialog to respawn. This is one session of one game; it is not an evaluation of game skill.
+
+### Known limits
 
 - **It is not real-time.** A plan covers 200 ms and a decision takes well over a second, so most of the time the agent is holding the last step of an old plan.
-- **Camera turning stops at the screen edge.** For pointer-locked games the page turns pointer movement into camera movement, and pointer positions are limited to the screen. In that session the commanded pointer sat on a screen edge for 139 of 847 decisions (16%), and there the agent could no longer turn that way.
+- **The first request after each history clear is slow.** Those 168 requests took a median 4.83 s against 1.61 s for the other 771 without reasoning, about 7 of 40 minutes of model time, although they evaluate the same number of new tokens. We have not found the cause: one probe on a spare server slot was inconclusive because the live game was sharing the server.
+- **Camera turning stops at the screen edge.** For pointer-locked games the page turns pointer movement into camera movement, and pointer positions are limited to the screen. The commanded pointer sat on a screen edge for 157 of the 1,022 decisions (15%), and there the agent could no longer turn that way.
 - **Operator instructions are passed, not proven.** The instruction is added to the user turn and clears the history when it changes. In three samples each of two instructions, this checkpoint showed no sign of following them.
 - **The GGUF conversion is not compared with the original weights**, and keys the runner rejects (function keys, for example) are skipped.
 
