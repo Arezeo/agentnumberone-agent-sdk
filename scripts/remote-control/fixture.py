@@ -63,7 +63,8 @@ def decide(frame, controls):
     if fixture == "move" and step == 0:
         controls.moveTo(.75, .46)
     elif fixture == "click" and step == 0:
-        controls.click(.3, .57)
+        controls.mouseDown(.3, .57)
+        controls.mouseUp(.3, .57)
     elif fixture == "mouse":
         if step == 0:
             controls.mouseDown(.68, .52)
@@ -79,11 +80,20 @@ def decide(frame, controls):
         else:
             return
     elif fixture == "type" and step == 0:
-        controls.click(.5, .52)
+        controls.mouseDown(.5, .52)
+        controls.mouseUp(.5, .52)
         controls.write("hello arena")
-        controls.press("Enter")
-    elif fixture == "drag" and step == 0:
-        controls.dragTo(.25, .52, .76, .52, duration=.3)
+        controls.keyDown("Enter")
+        controls.keyUp("Enter")
+    elif fixture == "drag":
+        if step == 0:
+            controls.mouseDown(.25, .52)
+        elif step == 1 and elapsed >= .15:
+            controls.moveTo(.5, .52)
+        elif step == 2 and elapsed >= .3:
+            controls.mouseUp(.76, .52)
+        else:
+            return
     else:
         return
     _state["step"] += 1
