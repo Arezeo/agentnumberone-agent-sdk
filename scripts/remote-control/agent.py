@@ -5,6 +5,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import secrets
 import ssl
 import time
@@ -14,10 +15,29 @@ from urllib.parse import urlsplit
 from aiohttp import web, WSMsgType
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, RTCIceServer
 from aiortc.sdp import candidate_from_sdp
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from sdk import Controls, Context, VERSION, MAX_BUFFER, MAX_TEXT_MESSAGE_BYTES, TEXT_CHANNEL, TEXT_FEATURE, agent_text, instruction_from
 from live_view import LiveView
 from av import VideoFrame
+
+
+def load_runner_key(path):
+    """Generate or load a runner-only identity. The browser receives only its public key."""
+    if not path:
+        return None
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        with open(path, "rb") as handle:
+            if os.fstat(handle.fileno()).st_mode & 0o077:
+                raise ValueError("The runner key file must be private (chmod 600).")
+            return Ed25519PrivateKey.from_private_bytes(handle.read(33))
+    seed = secrets.token_bytes(32)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(seed)
+    return Ed25519PrivateKey.from_private_bytes(seed)
 
 
 def origin(value):
@@ -60,6 +80,7 @@ class AgentSession:
         self.frames = 0
         self.stale_decisions = 0
         self.ready_sent = False
+        self.runner_key = None
         self.validated = False
         self.closed = False
         self.on_closed = None
@@ -152,11 +173,22 @@ class AgentSession:
             elif message.get("type") == "validated":
                 self.validated = True
                 print(json.dumps(dict(state="validated", decodedFrames=self.frames)), flush=True)
+            elif message.get("type") == "runner-challenge":
+                self.prove_runner(message.get("challenge"))
             elif message.get("type") == "error":
                 # Errors are diagnostics; successful actions have no per-action ack.
                 print(json.dumps(dict(state="control_error", code=message.get("code"))), flush=True)
         except (ValueError, TypeError, AttributeError):
             return
+
+    def prove_runner(self, challenge):
+        if (not self.runner_key or not self.validated or not self.ready_sent or not self.latest
+                or self.closed or time.monotonic() - self.latest[2] > 2
+                or not isinstance(challenge, str)
+                or not re.fullmatch(r"[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}", challenge)):
+            return False
+        signature = self.runner_key.sign(("ano-runner-proof-v1\n" + challenge).encode()).hex()
+        return self.send("actions", {"type": "runner-proof", "challenge": challenge, "signature": signature})
 
     def open_text(self):
         """Open the optional text channel once the page advertises it; old pages never see it."""
@@ -321,6 +353,10 @@ class AgentSession:
 def make_app(allowed_origin, token, policy, ice_servers=None, inference_timeout_ms=30000, decision_interval_ms=100, max_frame_age_ms=5000, live_view=False):
     app = web.Application(client_max_size=65536)
     sessions = set()
+    runner_key = load_runner_key(os.environ.get("ANO_RUNNER_KEY_FILE"))
+    if runner_key:
+        public_key = runner_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        print("Runner public key: " + public_key.hex(), flush=True)
     observer = LiveView() if live_view else None
     if observer:
         observer.install(app)
@@ -338,6 +374,7 @@ def make_app(allowed_origin, token, policy, ice_servers=None, inference_timeout_
         try:
             await socket.prepare(request)
             session = AgentSession(policy, ice_servers, inference_timeout_ms, decision_interval_ms, max_frame_age_ms)
+            session.runner_key = runner_key
             if observer:
                 observer.attach(session)
             session.on_closed = socket.close

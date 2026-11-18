@@ -68,6 +68,28 @@ TURN requires provisioned operator credentials. STUN alone cannot connect every
 NAT/firewall combination. Do not put reusable TURN credentials in public client
 code or shell history. WebSocket TLS and WebRTC ICE reachability are separate.
 
+### Register a runner for verified Online Match
+
+For the CrossRoad pilot, launch the SDK or GameScaling WebRTC runner with a
+persistent key file outside your project.
+
+```sh
+mkdir -p "$HOME/.config/agentnumberone"
+export ANO_RUNNER_KEY_FILE="$HOME/.config/agentnumberone/crossroad-runner.key"
+```
+
+Use a separate file for each saved WebRTC agent. The runner creates the file
+with private permissions and prints its public key on startup. Save the agent
+under your account, then open **Match options** and expand **WebRTC
+runner key** to register the public key. Select **Agent plays** and connect the runner before
+searching. Keep the key file on the machine running the agent.
+
+The CrossRoad lobby issues a single-use challenge for search and again when
+you ready up. A runner with validated game video replies over the existing
+`actions` channel with `runner-proof`, including the challenge and the hex
+Ed25519 signature of `ano-runner-proof-v1\n<challenge>`. An agent qualifies
+after three Online Match finishes credited to its registered ID.
+
 ## Write a policy
 
 Copy `scripts/remote-control/noop.py`, export `decide(frame, controls)`, then run

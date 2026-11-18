@@ -10,6 +10,7 @@ import sys
 import time
 import threading
 import unittest
+import uuid
 import io
 from types import SimpleNamespace
 from collections import deque
@@ -21,6 +22,7 @@ from live_view import LiveView, png
 import av
 from aiohttp.test_utils import TestClient, TestServer
 from aiohttp import WSServerHandshakeError
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from aiortc import RTCPeerConnection, RTCConfiguration, RTCSessionDescription, VideoStreamTrack
 import numpy
 import fixture
@@ -272,12 +274,15 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
             time.sleep(.6)
             controls.click(.3, .7)
         agent = AgentSession(slow_policy)
+        agent.runner_key = Ed25519PrivateKey.generate()
         motion = peer.createDataChannel("motion", ordered=False, maxRetransmits=0)
         actions = peer.createDataChannel("actions", ordered=True)
         peer.addTransceiver(MovingVideo(), direction="sendonly")
         ready = asyncio.Event()
         got_input = asyncio.Event()
         observed = []
+        got_proof = asyncio.Event()
+        challenge = str(uuid.uuid4())
         sid = "loopback-test"
 
         def send(kind, **fields):
@@ -290,9 +295,11 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
             if value["type"] == "ready":
                 self.assertGreaterEqual(value["decodedFrames"], 2)
                 self.assertGreater(value["videoTime"], 0)
+                send("runner-challenge", challenge=challenge)
                 send("validated")
                 ready.set()
             if value["type"] == "input": got_input.set()
+            if value["type"] == "runner-proof": got_proof.set()
 
         async def contexts():
             while True:
@@ -311,6 +318,13 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
             ticker = asyncio.create_task(contexts())
             await asyncio.wait_for(ready.wait(), 10)
             await asyncio.wait_for(got_input.wait(), 5)
+            self.assertFalse(got_proof.is_set(), "the runner must wait for validated video")
+            send("runner-challenge", challenge=challenge)
+            await asyncio.wait_for(got_proof.wait(), 3)
+            proof = next(v for v in observed if v["type"] == "runner-proof")
+            self.assertEqual((proof["sessionId"], proof["challenge"]), (sid, challenge))
+            agent.runner_key.public_key().verify(bytes.fromhex(proof["signature"]),
+                ("ano-runner-proof-v1\n" + challenge).encode())
             command = next(v for v in observed if v["type"] == "input")
             self.assertEqual(command["action"], dict(type="click", x=.3, y=.7, button="left"))
             self.assertEqual(command["taskToken"], "task-a")
