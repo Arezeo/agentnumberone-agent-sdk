@@ -68,20 +68,37 @@ class SDKTests(unittest.TestCase):
         self.assertAlmostEqual(controls.actions[0]["y"], 318/720, places=2)
 
     def test_explicit_mouse_boundaries_and_capabilities(self):
-        controls = Controls(["moveTo", "click", "mouseDown", "mouseUp", "dragTo", "scroll", "write"])
+        controls = Controls(["moveTo", "mouseDown", "mouseUp", "keyDown", "keyUp", "scroll", "write"])
         controls.moveTo(.1, .2)
-        controls.click(.3, .4)
         controls.mouseDown(.2, .2)
         controls.mouseUp(.8, .8)
-        controls.dragTo(.2, .3, .8, .9, duration=.25)
+        controls.keyDown("Enter")
+        controls.keyUp("Enter")
         controls.scroll(.1, .1, 2)
-        self.assertEqual(controls.actions[4]["durationMs"], 250)
-        self.assertEqual(controls.actions[2]["x"], .2)
+        self.assertEqual(controls.actions[3:5], [
+            {"type": "keyDown", "key": "Enter"},
+            {"type": "keyUp", "key": "Enter"},
+        ])
+        self.assertEqual(controls.actions[1]["x"], .2)
         for bad in (float("nan"), float("inf"), -1, 1.1, True):
-            with self.assertRaises(ValueError): controls.click(bad, 0)
-        with self.assertRaises(ValueError): controls.press("KeyW")
+            with self.assertRaises(ValueError): controls.mouseDown(bad, 0)
+        with self.assertRaises(ValueError): Controls([]).keyDown("KeyW")
         with self.assertRaises(ValueError): controls.write("a" * 129)
         with self.assertRaises(ValueError): controls.scroll(0, 0, 2001)
+
+    def test_deprecated_v1_shortcuts_warn_and_keep_their_wire_contract(self):
+        controls = Controls(["click", "press", "dragTo"])
+        with self.assertWarnsRegex(DeprecationWarning, "click is deprecated"):
+            controls.click(.3, .4)
+        with self.assertWarnsRegex(DeprecationWarning, "press is deprecated"):
+            controls.press("Enter")
+        with self.assertWarnsRegex(DeprecationWarning, "dragTo is deprecated"):
+            controls.dragTo(.2, .3, .8, .9, duration=.25)
+        self.assertEqual(controls.actions, [
+            {"type": "click", "x": .3, "y": .4, "button": "left"},
+            {"type": "press", "key": "Enter"},
+            {"type": "dragTo", "x": .2, "y": .3, "toX": .8, "toY": .9, "durationMs": 250, "button": "left"},
+        ])
 
     def test_task_clock_does_not_assume_clock_sync(self):
         context = Context(dict(taskToken="task", generation=2, nowMs=100, expiresAtMs=900, active=True), received=2000)
@@ -140,7 +157,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
 
         def policy(frame, controls):
             time.sleep(.08)
-            controls.click(.1, .2)
+            controls.mouseDown(.1, .2)
 
         class Channel:
             readyState = "open"
@@ -150,7 +167,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
         agent = AgentSession(policy, max_frame_age_ms=30)
         agent.session_id, agent.validated = "test", True
         agent.channels = {"motion": Channel(), "actions": Channel()}
-        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["click"]))
+        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["mouseDown"]))
         agent.latest = (1, object(), time.monotonic(), agent.context.identity)
         try:
             await asyncio.sleep(.15)
@@ -163,11 +180,11 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
     async def test_only_explicit_inference_timeout_closes_peer(self):
         def policy(frame, controls):
             time.sleep(.08)
-            controls.click(.1, .2)
+            controls.mouseDown(.1, .2)
 
         agent = AgentSession(policy, inference_timeout_ms=25)
         agent.session_id, agent.validated = "test", True
-        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["click"]))
+        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["mouseDown"]))
         agent.latest = (1, object(), time.monotonic(), agent.context.identity)
         try:
             await asyncio.sleep(.12)
@@ -205,7 +222,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
         def policy(frame, controls):
             entered.set()
             time.sleep(.08)
-            controls.click(.1, .2)
+            controls.mouseDown(.1, .2)
 
         class Channel:
             readyState = "open"
@@ -215,11 +232,11 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
         agent = AgentSession(policy)
         agent.session_id, agent.validated = "test", True
         agent.channels = {"motion": Channel(), "actions": Channel()}
-        agent.context = Context(dict(taskToken="old", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["click"]))
+        agent.context = Context(dict(taskToken="old", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["mouseDown"]))
         agent.latest = (1, object(), time.monotonic(), agent.context.identity)
         try:
             self.assertTrue(await asyncio.to_thread(entered.wait, .5))
-            agent.context = Context(dict(taskToken="new", generation=1, active=True, nowMs=200, expiresAtMs=1000, capabilities=["click"]))
+            agent.context = Context(dict(taskToken="new", generation=1, active=True, nowMs=200, expiresAtMs=1000, capabilities=["mouseDown"]))
             await asyncio.sleep(.12)
             self.assertEqual(sent, [])
             self.assertEqual(agent.stale_decisions, 1)
@@ -231,7 +248,8 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
 
         def policy(frame, controls):
             controls.moveTo(.1, .2)
-            controls.click(.3, .4)
+            controls.mouseDown(.3, .4)
+            controls.mouseUp(.3, .4)
             controls.moveTo(.5, .6)
 
         class Channel:
@@ -243,11 +261,11 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
         agent = AgentSession(policy)
         agent.session_id, agent.validated = "test", True
         agent.channels = {label: Channel(label) for label in ("motion", "actions")}
-        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["click", "moveTo"]))
+        agent.context = Context(dict(taskToken="task", generation=1, active=True, nowMs=100, expiresAtMs=1000, capabilities=["mouseDown", "mouseUp", "moveTo"]))
         agent.latest = (1, object(), time.monotonic(), agent.context.identity)
         try:
             await asyncio.sleep(.08)
-            self.assertEqual([(label, value["sequence"]) for label, value in sent], [("motion", 1), ("actions", 2), ("motion", 3)])
+            self.assertEqual([(label, value["sequence"]) for label, value in sent], [("motion", 1), ("actions", 2), ("actions", 3), ("motion", 4)])
         finally:
             await agent.close()
 
@@ -272,7 +290,8 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
         def slow_policy(frame, controls):
             controls.show_model_input(frame.reformat(width=32, height=18, format="rgb24"))
             time.sleep(.6)
-            controls.click(.3, .7)
+            controls.mouseDown(.3, .7)
+            controls.mouseUp(.3, .7)
         agent = AgentSession(slow_policy)
         agent.runner_key = Ed25519PrivateKey.generate()
         motion = peer.createDataChannel("motion", ordered=False, maxRetransmits=0)
@@ -298,7 +317,8 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
                 send("runner-challenge", challenge=challenge)
                 send("validated")
                 ready.set()
-            if value["type"] == "input": got_input.set()
+            if value["type"] == "input" and value["action"]["type"] == "mouseUp":
+                got_input.set()
             if value["type"] == "runner-proof": got_proof.set()
 
         async def contexts():
@@ -306,7 +326,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
                 if actions.readyState == "open":
                     now = time.monotonic() * 1000
                     send("context", nonce="nonce", taskToken="task-a", generation=1, active=True,
-                         nowMs=now, expiresAtMs=now + 1000, capabilities=["click", "releaseAll"])
+                         nowMs=now, expiresAtMs=now + 1000, capabilities=["mouseDown", "mouseUp", "releaseAll"])
                 await asyncio.sleep(.1)
 
         ticker = None
@@ -325,9 +345,12 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((proof["sessionId"], proof["challenge"]), (sid, challenge))
             agent.runner_key.public_key().verify(bytes.fromhex(proof["signature"]),
                 ("ano-runner-proof-v1\n" + challenge).encode())
-            command = next(v for v in observed if v["type"] == "input")
-            self.assertEqual(command["action"], dict(type="click", x=.3, y=.7, button="left"))
-            self.assertEqual(command["taskToken"], "task-a")
+            commands = [v for v in observed if v["type"] == "input"][:2]
+            self.assertEqual([v["action"] for v in commands], [
+                dict(type="mouseDown", x=.3, y=.7, button="left"),
+                dict(type="mouseUp", x=.3, y=.7, button="left"),
+            ])
+            self.assertTrue(all(v["taskToken"] == "task-a" for v in commands))
             self.assertTrue(agent.validated)
             # A model slower than 500 ms remains connected while the decoder
             # continuously drains moving frames; no old SDK deadline applies.
@@ -342,7 +365,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(motion.ordered)
             print(json.dumps(dict(test="aiortc_loopback", decodedFrames=agent.frames,
                                   firstDecodedFrameMs=round((agent.first_frame_at - agent.started_at) * 1000, 1),
-                                  action=command["action"]["type"])))
+                                  actions=[v["action"]["type"] for v in commands])))
         finally:
             if ticker:
                 ticker.cancel()
@@ -395,7 +418,7 @@ class AsyncTests(unittest.IsolatedAsyncioTestCase):
                 if actions.readyState == "open":
                     now = time.monotonic() * 1000
                     send("context", nonce="nonce", taskToken="task", generation=1, active=True, nowMs=now,
-                         expiresAtMs=now + 1000, capabilities=["click"], **({"features": features} if features else {}))
+                         expiresAtMs=now + 1000, capabilities=["mouseDown"], **({"features": features} if features else {}))
                 await asyncio.sleep(.05)
 
         ticker = None

@@ -103,17 +103,15 @@ perception, memory, and action selection, or implement a WebRTC client for an
 existing harness. It does not require the model to return cursor coordinates or
 make a new decision for every frame.
 
-`controls` offers `moveTo(x,y)`, `click(x,y,button="left")`,
+`controls` offers `moveTo(x,y)`,
 `mouseDown(x,y,button="left")`, `mouseUp(x,y,button="left")`,
-`dragTo(x,y,toX,toY,duration=.2,button="left")`, `keyDown("KeyW")`,
-`keyUp("KeyW")`, `press("Enter")`, `write(text)`,
+`keyDown("KeyW")`, `keyUp("KeyW")`, `write(text)`,
 `scroll(x,y,deltaY,deltaX=0)` and `releaseAll()`. All coordinates are normalized
-canvas coordinates in `[0,1]`; they are not desktop pixels. Drag duration is in
-seconds in Python and milliseconds on the wire. Button names are
-`left`, `middle`, `right`; key names are supported physical DOM codes.
-Text is limited to 128 UTF-16 code units; scroll deltas to ±2000; drags to one
-second. Unsupported capabilities raise an error before transmission. There is
-no arbitrary shell, Python execution, browser selector or DOM command on wire.
+canvas coordinates in `[0,1]`. Button names are `left`, `middle`, and `right`.
+Key names are supported physical DOM codes. Text is limited to 128 UTF-16 code
+units and scroll deltas to ±2000. Unsupported capabilities raise an error before
+transmission. There is no arbitrary shell, Python execution, browser selector or
+DOM command on wire.
 
 `controls.instruction` is the operator's latest instruction, or `""` when there
 is none or the page has no text feature. `controls.say(text, final=True)` sends
@@ -128,8 +126,18 @@ decisions using down and up, rather than sleeping inside a model call. A decisio
 is limited to 32 locally built actions; the browser has a 16-action queue and
 bounded input messages. When data-channel buffers exceed 16 KiB the endpoint
 drops new sends. Separate decisions that rely on visual completion by observing
-new frames. `dragTo` contains its own start/end coordinates and is atomic relative
-to other reliable actions; do not interleave motion during it.
+new frames. For a key tap, send `keyDown` followed by `keyUp`. For a click,
+send `mouseDown` followed by `mouseUp` at the same position. For a drag, send
+`mouseDown` at the start, `moveTo` while the button stays down, and `mouseUp` at
+the destination. The button commands carry their own reliable coordinates.
+Intermediate `moveTo` packets can be dropped or arrive out of order.
+
+The v1 shortcuts `click`, `press`, and `dragTo` are **deprecated**. Existing
+clients can still send them when the surface advertises them. Update policies
+to the explicit sequences above so their action vocabulary matches human
+recordings. The Python SDK emits a `DeprecationWarning` for these shortcuts.
+A legacy `dragTo` supplies a start, destination, button, and a duration of up
+to one second. The browser runs that straight-line gesture locally.
 
 Inference cadence, timeout and observation age are separate settings:
 
@@ -179,7 +187,7 @@ Every message has `v: "arena.webrtc-control.v1"`, `sessionId`, and `type`.
 6. Endpoint sends `input` on the appropriate channel with a globally increasing
    positive `sequence`, current `taskToken`, `generation`, bounded `expiresAtMs`,
    and `action`. Motion sequence checks also reject packets older than an
-   accepted reliable action, so late motion cannot undo a newer click position.
+   accepted reliable action, so late motion cannot undo a newer button position.
    Reliable actions retain their own last-action check and are not discarded
    merely because a later motion packet arrived first.
 
@@ -203,7 +211,7 @@ Every message has `v: "arena.webrtc-control.v1"`, `sessionId`, and `type`.
 Example input on the reliable channel:
 
 ```json
-{"v":"arena.webrtc-control.v1","sessionId":"opaque-session","type":"input","sequence":3,"taskToken":"opaque-task","generation":1,"expiresAtMs":14500,"action":{"type":"click","x":0.5,"y":0.5,"button":"left"}}
+{"v":"arena.webrtc-control.v1","sessionId":"opaque-session","type":"input","sequence":3,"taskToken":"opaque-task","generation":1,"expiresAtMs":14500,"action":{"type":"mouseDown","x":0.5,"y":0.5,"button":"left"}}
 ```
 
 The browser is the final validator. It rejects wrong sessions/tasks/generations,
@@ -306,8 +314,8 @@ capture-to-action latency or prove that the game applied an action.
 Pixel Duel agent registration selects **Live video WebRTC** or **Legacy relay**;
 only a signed agent seat configured for `arena.webrtc-control.v1` uses this path.
 Its capabilities are `moveTo`, `mouseDown`, `mouseUp`, `keyDown`, `keyUp` and
-`releaseAll`. The host samples control state on game ticks, so instantaneous
-`click`, `press` and `dragTo` are not advertised for that surface. The WebRTC path
+`releaseAll`. The host samples held control state on game ticks, so a press and
+release between ticks can be missed. The WebRTC path
 draws directly to the visible seat canvas without a JPEG upload/decode loop.
 
 Native adapters use the availability allowlist in `app/remote-control/surfaces.ts`.

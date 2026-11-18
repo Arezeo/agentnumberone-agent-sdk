@@ -2,6 +2,7 @@
 import math
 import re
 import time
+import warnings
 
 VERSION = "arena.webrtc-control.v1"
 MAX_BUFFER = 16384
@@ -101,6 +102,8 @@ class Controls:
         self._add("moveTo", x=unit(x), y=unit(y))
 
     def click(self, x, y, button="left"):
+        """Deprecated. Use mouseDown and mouseUp at the click position."""
+        warnings.warn("click is deprecated. Use mouseDown and mouseUp.", DeprecationWarning, stacklevel=2)
         self._add("click", x=unit(x), y=unit(y), button=self._button(button))
 
     def mouseDown(self, x, y, button="left"):
@@ -110,6 +113,8 @@ class Controls:
         self._add("mouseUp", x=unit(x), y=unit(y), button=self._button(button))
 
     def dragTo(self, x, y, toX, toY, duration=0.2, button="left"):
+        """Deprecated. Use mouseDown, moveTo while held, then mouseUp."""
+        warnings.warn("dragTo is deprecated. Use mouseDown, moveTo, and mouseUp.", DeprecationWarning, stacklevel=2)
         if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(duration) or not 0 <= duration <= 1:
             raise ValueError("Drag duration must be between 0 and 1 seconds.")
         self._add("dragTo", x=unit(x), y=unit(y), toX=unit(toX), toY=unit(toY), durationMs=round(duration * 1000), button=self._button(button))
@@ -121,6 +126,8 @@ class Controls:
         self._add("keyUp", key=self._key(key))
 
     def press(self, key):
+        """Deprecated. Use keyDown and keyUp."""
+        warnings.warn("press is deprecated. Use keyDown and keyUp.", DeprecationWarning, stacklevel=2)
         self._add("press", key=self._key(key))
 
     def write(self, text):
