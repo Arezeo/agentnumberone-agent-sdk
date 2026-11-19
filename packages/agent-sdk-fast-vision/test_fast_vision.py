@@ -1,4 +1,4 @@
-"""Fast vision loop: pipelining, action chunks, captions, trace, sheet shape, decide()."""
+"""Fast vision loop: pipelining, action chunks, pointer actions, captions, trace, sheet shape, decide()."""
 import threading
 import time
 import unittest
@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fast_loop import Answer, SimpleConfig, SimplePolicy  # noqa: E402
+from fast_loop import Answer, SimpleConfig, SimplePolicy, parse_slot, slot_text  # noqa: E402
 from sheet import Tile, build  # noqa: E402
 
 
@@ -223,7 +223,103 @@ class Chunks(unittest.TestCase):
         self.assertIn('"keys"', policy.prompt)
 
 
+class MouseControls(FakeControls):
+    capabilities = ("keyDown", "keyUp", "moveTo", "mouseDown", "mouseUp", "releaseAll")
+
+    def __init__(self):
+        super().__init__()
+        self.log = []
+
+    def keyDown(self, key):
+        super().keyDown(key)
+        self.log.append(("keyDown", key))
+
+    def moveTo(self, x, y):
+        self.log.append(("moveTo", round(x, 3), round(y, 3)))
+
+    def mouseDown(self, x, y, button="left"):
+        self.log.append(("mouseDown", round(x, 3), round(y, 3), button))
+
+    def mouseUp(self, x, y, button="left"):
+        self.log.append(("mouseUp", round(x, 3), round(y, 3), button))
+
+
+class PointerActions(unittest.TestCase):
+    def test_slot_grammar(self):
+        actions, bad = parse_slot("moveTo 0.52 0.61; mouseDown 0.52 0.61; mouseUp(0.52, 0.61)")
+        self.assertEqual([a["type"] for a in actions], ["moveTo", "mouseDown", "mouseUp"])
+        self.assertEqual(bad, [])
+        self.assertEqual(slot_text(parse_slot("w")[0]), "KeyW")
+        self.assertEqual(parse_slot("none"), ([], []))
+        self.assertEqual(parse_slot("click 0.5 0.5")[1], ["click 0.5 0.5"])   # not guessed at
+        self.assertEqual(parse_slot([{"type": "moveTo", "x": 2, "y": -1}])[0][0], {"type": "moveTo", "x": 1.0, "y": 0.0})
+
+    def test_click_is_sent_as_explicit_sequence_in_one_slot(self):
+        policy = SimplePolicy(cfg(chunk_ms=200, chunk_slot_ms=100))
+        controls = MouseControls()
+        policy.capabilities = frozenset(controls.capabilities)
+        answer = policy._parse('{"keys":["moveTo 0.52 0.61; mouseDown 0.52 0.61; mouseUp 0.52 0.61","W"],'
+                               '"confidence":0.9,"why":"press play again"}', time.monotonic())
+        answer.call_id = 1
+        policy.pending = answer
+        drain(policy, controls, 0.35)
+        self.assertEqual(controls.log, [("moveTo", 0.52, 0.61), ("mouseDown", 0.52, 0.61, "left"),
+                                        ("mouseUp", 0.52, 0.61, "left"), ("keyDown", "KeyW")])
+
+    def test_actions_the_game_does_not_offer_are_refused(self):
+        policy = SimplePolicy(cfg(chunk_ms=100, chunk_slot_ms=100))
+        controls = MouseControls()
+        controls.capabilities = ("keyDown", "keyUp")        # keyboard-only game
+        answer = policy._parse('{"keys":["moveTo 0.5 0.5; mouseDown 0.5 0.5; mouseUp 0.5 0.5"],"confidence":0.9}',
+                               time.monotonic())
+        policy.pending = answer
+        drain(policy, controls, 0.2)
+        self.assertEqual(controls.log, [])
+
+    def test_prompt_lists_only_offered_actions(self):
+        policy = SimplePolicy(cfg(chunk_ms=1000, chunk_slot_ms=250))
+        policy.capabilities = frozenset({"keyDown", "keyUp"})
+        self.assertNotIn("mouseDown x y", policy.prompt_for())
+        policy.capabilities = frozenset({"keyDown", "keyUp", "moveTo", "mouseDown", "mouseUp"})
+        text = policy.prompt_for("press play again")
+        self.assertIn("mouseDown x y", text)
+        self.assertNotIn("press play again", text)          # it goes next to the image instead
+        content = policy._user_content(b"png", 0, policy.instruction)
+        self.assertIn("Operator instruction: press play again", content[0]["text"])
+
+    def test_now_frame_sent_full_size_when_pointer_actions_are_offered(self):
+        policy = SimplePolicy(cfg(frames=3, frame_width=640))
+        img = np.zeros((720, 1280, 3), np.uint8)
+        policy.window = [(time.monotonic(), img, "", 0.0)]
+        policy.capabilities = frozenset({"keyDown", "keyUp"})
+        self.assertFalse(policy.wants_frame())
+        policy.capabilities = frozenset({"keyDown", "keyUp", "moveTo", "mouseDown", "mouseUp"})
+        self.assertTrue(policy.wants_frame())
+        policy._now_frames[7] = img
+        content = policy._user_content(b"png", 7, "")
+        self.assertEqual([c["type"] for c in content], ["text", "image_url", "text", "image_url"])
+        import base64
+        now_png = base64.b64decode(content[3]["image_url"]["url"].split(",", 1)[1])
+        self.assertEqual((int.from_bytes(now_png[16:20], "big"), int.from_bytes(now_png[20:24], "big")), (640, 360))
+
+
 class Trace(unittest.TestCase):
+    def test_numbering_continues_after_a_restart(self):
+        import tempfile
+        from pathlib import Path
+
+        class Board:
+            def __init__(self, root):
+                self.root = Path(root)
+
+            def log(self, *a):
+                pass
+
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "trace" / "000041").mkdir(parents=True)
+            policy = SimplePolicy(cfg(), board=Board(root))
+            self.assertEqual(policy.call_id, 41)
+
     def test_every_call_gets_an_outcome(self):
         import json
         import tempfile

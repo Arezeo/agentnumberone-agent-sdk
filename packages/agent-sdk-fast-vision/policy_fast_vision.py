@@ -57,12 +57,14 @@ def _get() -> SimplePolicy:
 def decide(frame, controls):
     loop = _get()
     now = time.monotonic()
-    # The operator's instruction is part of the question.
+    capabilities = frozenset(getattr(controls, "capabilities", ()) or ())
+    # The prompt lists only the actions this game offers; the operator's
+    # instruction travels with the image.
+    loop.capabilities = capabilities
     loop.prompt = loop.prompt_for(getattr(controls, "instruction", "") or "")
     loop.observe(frame)
     loop.step(controls)
-    capabilities = set(getattr(controls, "capabilities", ()) or ())
-    if loop.wants_request(now) and "keyDown" in capabilities:
+    if loop.wants_request(now) and capabilities & {"keyDown", "keyUp", "moveTo", "mouseDown", "mouseUp"}:
         sheet_png, _ = loop.compose()
         loop.request(sheet_png)
         _show(controls, getattr(loop, "last_sheet", None))

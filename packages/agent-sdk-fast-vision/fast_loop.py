@@ -4,9 +4,14 @@
     2. tile them into ONE captioned contact sheet and send it to an
        OpenAI-compatible /chat/completions vision model (up to N calls in flight)
     3. the model reports what it sees, then plans the next ANO_CHUNK_MS as slots
-       of ANO_CHUNK_SLOT_MS (one key or "none" per slot)
+       of ANO_CHUNK_SLOT_MS; each slot is "none" or SDK actions separated by ";"
+       (a key tap, or moveTo / mouseDown / mouseUp at 0-1 frame coordinates)
     4. the loop taps each slot on time; a newer plan replaces what is left of
        the old one; answers decided from older pictures are dropped
+
+The prompt lists only the actions the game advertises (controls.capabilities).
+When pointer actions are offered, the NOW frame is also sent full-size, because
+click coordinates read off a 320 px tile miss small buttons.
 
 The model decides. The code records what it reports (trace/) and never
 overrules its keys; the only filters are about time (stale or superseded
@@ -19,6 +24,7 @@ import base64
 import concurrent.futures
 import json
 import os
+import re
 import shutil
 import sys
 import threading
@@ -99,14 +105,18 @@ frame. Each tile is captioned with its number, its age in seconds and the key
 tapped after it.
 
 First LOOK at the NOW tile, then PLAN the next {chunk_ms} ms as {slots} slots of
-{slot_ms} ms. For each slot give the key to tap at the start of that slot, or
-"none" to wait. A newer plan will replace whatever is left of this one.
+{slot_ms} ms. Each slot is "none" (wait) or one or more actions separated by
+";", sent at the start of that slot. A newer plan will replace whatever is left
+of this one.
+
+Actions this game accepts:
+{actions}
 
 Reply with exactly one JSON object and nothing else, fields in this order:
   {{"chicken": "standing" | "squashed_flat" | "not_visible",
     "on": "grass" | "road" | "water",
     "danger": "<=60 chars: nearest car in the chicken's lane or the next lane up, and which way it moves",
-    "keys": [<{slots} entries, each "W" | "A" | "S" | "D" | "none">],
+    "keys": [<{slots} entries, each "none" or actions separated by ";">],
     "confidence": 0.0-1.0,
     "why": "<=80 chars"}}
 
@@ -117,6 +127,92 @@ Rules:
   during the hop; otherwise wait, or step sideways/back out of a car's path.
 - Prefer progress up the screen when it is safe.
 {instruction}"""
+
+
+POINTER = re.compile(r"^(moveTo|mouseDown|mouseUp)\s*\(?\s*(-?[0-9]*\.?[0-9]+)\s*[, ]\s*(-?[0-9]*\.?[0-9]+)\s*\)?"
+                     r"(?:\s+(left|middle|right))?$", re.I)
+NEEDS = {"tap": ("keyDown", "keyUp"), "moveTo": ("moveTo",), "mouseDown": ("mouseDown",), "mouseUp": ("mouseUp",)}
+
+
+def parse_slot(entry: Any) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """One plan slot -> SDK actions. Accepts "W", "none", "moveTo 0.5 0.6; mouseDown 0.5 0.6",
+    a list of such strings, or {"type": "moveTo", "x": .., "y": ..} objects. Returns (actions, unusable)."""
+    if isinstance(entry, list):
+        parts: List[Any] = entry
+    elif isinstance(entry, dict):
+        parts = [entry]
+    else:
+        parts = [p for p in str(entry or "").split(";")]
+    actions, unusable = [], []
+    for part in parts:
+        if isinstance(part, dict):
+            kind = str(part.get("type", ""))
+            part = f"{kind} {part.get('x', '')} {part.get('y', '')} {part.get('button', '')}".strip() \
+                if kind in ("moveTo", "mouseDown", "mouseUp") else str(part.get("key", kind))
+        text = str(part or "").strip()
+        if not text or text.lower() in ("none", "noop", "wait", "-"):
+            continue
+        match = POINTER.match(text)
+        if match:
+            kind = {"moveto": "moveTo", "mousedown": "mouseDown", "mouseup": "mouseUp"}[match.group(1).lower()]
+            action = {"type": kind, "x": min(1.0, max(0.0, float(match.group(2)))),
+                      "y": min(1.0, max(0.0, float(match.group(3))))}
+            if kind != "moveTo":
+                action["button"] = (match.group(4) or "left").lower()
+            actions.append(action)
+            continue
+        key = canonical_direction(text)
+        if key:
+            actions.append({"type": "tap", "key": key})
+        else:
+            unusable.append(text[:40])
+    return actions, unusable
+
+
+def slot_text(actions: List[Dict[str, Any]]) -> str:
+    """Canonical string for a slot (what the trace and tests compare)."""
+    out = []
+    for a in actions:
+        if a["type"] == "tap":
+            out.append(a["key"])
+        else:
+            out.append(f"{a['type']} {a['x']:.3f} {a['y']:.3f}" + ("" if a.get("button", "left") == "left"
+                                                                    or a["type"] == "moveTo" else " " + a["button"]))
+    return "; ".join(out)
+
+
+def short(actions: List[Dict[str, Any]]) -> str:
+    """Compact form for the plan line and captions: W, move(.52,.61)+down(.52,.61)+up(.52,.61)."""
+    names = {"moveTo": "move", "mouseDown": "down", "mouseUp": "up"}
+    return "+".join(a["key"].replace("Key", "") if a["type"] == "tap"
+                    else f"{names[a['type']]}({a['x']:.2f},{a['y']:.2f})".replace("0.", ".") for a in actions) or "-"
+
+
+def _resize_width(rgb: np.ndarray, width: int) -> np.ndarray:
+    height = max(1, int(round(rgb.shape[0] * width / rgb.shape[1])))
+    if (height, width) == rgb.shape[:2]:
+        return rgb
+    from PIL import Image
+    return np.asarray(Image.fromarray(rgb).resize((width, height), Image.LANCZOS), dtype=np.uint8)
+
+
+def actions_help(capabilities) -> str:
+    caps = set(capabilities or ())
+    lines = []
+    if {"keyDown", "keyUp"} <= caps:
+        lines.append('  W / A / S / D      tap that key once (keyDown then keyUp)')
+    if "moveTo" in caps:
+        lines.append('  moveTo x y         move the pointer to x, y')
+    if "mouseDown" in caps:
+        lines.append('  mouseDown x y      press the left mouse button at x, y')
+    if "mouseUp" in caps:
+        lines.append('  mouseUp x y        release the left mouse button at x, y')
+    if caps & {"moveTo", "mouseDown", "mouseUp"}:
+        lines.append('  x and y are 0-1 across and down the NOW frame (0 0 = top-left).')
+    if {"moveTo", "mouseDown", "mouseUp"} <= caps:
+        lines.append('  A click on something on screen is three actions in one slot:')
+        lines.append('    "moveTo x y; mouseDown x y; mouseUp x y"')
+    return "\n".join(lines) or "  (none advertised yet)"
 
 
 @dataclass
@@ -130,6 +226,8 @@ class SimpleConfig:
     chunk_ms: int = 0               # >0: the model plans this many ms of keys per call (action chunk)
     chunk_slot_ms: int = 250        # one key (or none) per slot
     say: bool = True                # send the model's "why" to the game's text channel
+    send_frame: str = "auto"        # also send the NOW frame full-size: auto = when pointer actions are offered
+    frame_width: int = 1280         # width of that frame image (aspect kept)
     base_url: str = ""
     model: str = ""
     api_key: str = ""
@@ -152,6 +250,8 @@ class SimpleConfig:
             chunk_ms=chunk_ms,
             chunk_slot_ms=max(50, env_int("ANO_CHUNK_SLOT_MS", cls.chunk_slot_ms)),
             say=os.environ.get("ANO_SAY", "1") != "0",
+            send_frame=os.environ.get("ANO_SEND_FRAME", "auto").strip().lower() or "auto",
+            frame_width=max(320, env_int("ANO_FRAME_WIDTH", cls.frame_width)),
             max_inflight=max_inflight,
             frames=env_int("ANO_FRAMES", cls.frames),
             # In chunk mode the slots set the pace; the gap only stops two taps
@@ -216,6 +316,28 @@ class CallTrace:
         self.lock = threading.Lock()
         self.calls: Dict[int, Dict[str, Any]] = {}
 
+    def last_call(self) -> int:
+        """Highest call number already on disk, so a restarted run never overwrites old folders."""
+        if not self.enabled:
+            return 0
+        best = 0
+        try:
+            for path in self.dir.iterdir():
+                if path.name.isdigit():
+                    best = max(best, int(path.name))
+        except FileNotFoundError:
+            pass
+        try:
+            with open(self.root / "trace.jsonl", encoding="utf-8") as handle:
+                for line in handle:
+                    try:
+                        best = max(best, int(json.loads(line).get("call", 0)))
+                    except (ValueError, TypeError, AttributeError):
+                        pass
+        except FileNotFoundError:
+            pass
+        return best
+
     def folder(self, call_id: int) -> Optional[Path]:
         if not self.enabled:
             return None
@@ -278,6 +400,9 @@ class SimplePolicy:
     def __init__(self, config: SimpleConfig, *, board=None, runbook: str = "") -> None:
         self.config = config
         self.board = board
+        self.capabilities: frozenset = frozenset({"keyDown", "keyUp"})   # set from controls each tick
+        self.instruction = ""
+        self._now_frames: Dict[int, np.ndarray] = {}   # call id -> NOW frame to send full-size
         self.prompt = self.prompt_for(runbook)
         self.window: List[Tuple[float, np.ndarray, str, float]] = []   # (arrival, rgb, action_after, wall)
         self.seq = 0
@@ -293,7 +418,7 @@ class SimplePolicy:
                        "errors": 0, "skipped_busy": 0, "skipped_gap": 0}
         self.last_error = ""
         self.trace = CallTrace(getattr(board, "root", None))
-        self.call_id = 0
+        self.call_id = self.trace.last_call()
         self._composed: List[Dict[str, Any]] = []
         self.presses: List[Tuple[float, str]] = []   # (monotonic time sent, key), newest last
         # The chunk being played: answer, slot start times, keys, and per-slot result.
@@ -306,17 +431,20 @@ class SimplePolicy:
         return max(1, self.config.chunk_ms // self.config.chunk_slot_ms)
 
     def prompt_for(self, instruction: str = "") -> str:
+        # The operator's instruction is sent in the user message next to the image
+        # (measured: the model ignored it as the last line of the system prompt).
+        self.instruction = instruction or ""
         extra = ("\nYou have also been told: " + instruction) if instruction else ""
+        fields = dict(frames=self.config.frames, chunk_ms=self.slots * self.config.chunk_slot_ms,
+                      slots=self.slots, slot_ms=self.config.chunk_slot_ms, instruction="",
+                      actions=actions_help(self.capabilities))
         custom = os.environ.get("ANO_PROMPT_FILE", "").strip()
         if custom:
-            # Your own game's prompt. Placeholders: {frames} {chunk_ms} {slots} {slot_ms} {instruction};
-            # write literal braces as {{ }}.
-            return Path(custom).read_text("utf-8").format(
-                frames=self.config.frames, chunk_ms=self.slots * self.config.chunk_slot_ms,
-                slots=self.slots, slot_ms=self.config.chunk_slot_ms, instruction=extra)
+            # Your own game's prompt. Placeholders: {frames} {chunk_ms} {slots} {slot_ms} {actions}
+            # {instruction}; write literal braces as {{ }}.
+            return Path(custom).read_text("utf-8").format(**dict(fields, instruction=extra))
         if self.config.chunk_ms > 0:
-            return CHUNK_PROMPT.format(frames=self.config.frames, chunk_ms=self.slots * self.config.chunk_slot_ms,
-                                       slots=self.slots, slot_ms=self.config.chunk_slot_ms, instruction=extra)
+            return CHUNK_PROMPT.format(**fields)
         return SIMPLE_PROMPT.format(frames=self.config.frames, instruction=extra)
 
     # -- 1. keep the window ------------------------------------------------
@@ -360,23 +488,46 @@ class SimplePolicy:
         self.call_id += 1
         call_id = self.call_id
         self.trace.start(call_id, {"call": call_id, "frames": self._composed,
+                                   "capabilities": sorted(self.capabilities),
+                                   "instruction": self.instruction,
                                    "dir": f"trace/{call_id:06d}"}, sheet_png)
+        if self.wants_frame() and self.window:
+            self._now_frames[call_id] = self.window[-1][1]   # encoded on the worker, not the tick
         self.inflight.append(self.pool.submit(self._call, sheet_png, started, call_id))
 
+    def wants_frame(self) -> bool:
+        mode = self.config.send_frame
+        if mode in ("1", "true", "on", "yes"):
+            return True
+        if mode in ("0", "false", "off", "no"):
+            return False
+        return bool(self.capabilities & {"moveTo", "mouseDown", "mouseUp"})
+
+    def _user_content(self, sheet_png: bytes, call_id: int, instruction: str) -> List[Dict[str, Any]]:
+        image = lambda png: {"type": "image_url", "image_url": {
+            "url": "data:image/png;base64," + base64.b64encode(png).decode("ascii"), "detail": self.config.detail}}
+        text = "Contact sheet follows, oldest first; last tile is now."
+        if instruction:
+            text += "\nOperator instruction: " + instruction
+        content = [{"type": "text", "text": text}, image(sheet_png)]
+        now_rgb = self._now_frames.pop(call_id, None)
+        if now_rgb is not None:
+            height, width = now_rgb.shape[:2]
+            target = min(self.config.frame_width, width)
+            now_png = encode_png(_resize_width(now_rgb, target))
+            self.trace.write(call_id, "now.png", now_png)
+            content += [{"type": "text", "text": "The NOW frame at full size. Pointer x, y are 0-1 across "
+                                                 "and down this image."}, image(now_png)]
+        return content
+
     def _call(self, sheet_png: bytes, started: float, call_id: int = 0) -> Answer:
-        url = base64.b64encode(sheet_png).decode("ascii")
         payload = {
             "model": self.config.model,
             "max_tokens": self.config.max_tokens,
             "temperature": 0,
             "messages": [
                 {"role": "system", "content": self.prompt},
-                {"role": "user", "content": [
-                    {"type": "text", "text": "Contact sheet follows, oldest first; last tile is now. Next key?"},
-                    {"type": "image_url",
-                     "image_url": {"url": "data:image/png;base64," + url,
-                                   "detail": self.config.detail}},
-                ]},
+                {"role": "user", "content": self._user_content(sheet_png, call_id, self.instruction)},
             ],
         }
         import urllib.error
@@ -441,18 +592,22 @@ class SimplePolicy:
                 answer.error = f"unusable key {raw!r}"
         keys = data.get("keys")
         if isinstance(keys, list) and keys:
-            slots = []
+            slots, unusable = [], []
             for item in keys[: self.slots]:
-                text = str(item or "").strip()
-                slots.append("" if text.lower() in ("none", "noop", "wait", "") else (canonical_direction(text) or ""))
+                actions, bad = parse_slot(item)
+                slots.append(slot_text(actions))
+                unusable += bad
             answer.keys = slots
             answer.key = next((k for k in slots if k), "")
+            if unusable:
+                answer.seen["unusable"] = unusable[:6]   # shown in the trace; never guessed at
             answer.error = ""        # "key" may be absent in chunk replies
         elif answer.key:
             answer.keys = [answer.key]
         # What the model says it saw is recorded for the trace; its keys are
         # played exactly as given -- the model decides, the code does not overrule it.
-        answer.seen = {k: data.get(k) for k in ("chicken", "on", "danger") if k in data}
+        answer.seen = {**{k: data.get(k) for k in ("chicken", "on", "danger") if k in data},
+                       **({"unusable": answer.seen["unusable"]} if "unusable" in answer.seen else {})}
         answer.confidence = float(data.get("confidence", 0) or 0)
         answer.why = str(data.get("why") or "")[:120]
         return answer
@@ -579,40 +734,67 @@ class SimplePolicy:
             due = chunk["start"] + index * slot_s
             if now < due:
                 break
-            key = chunk["keys"][index]
-            if not key:
+            actions, _ = parse_slot(chunk["keys"][index])
+            if not actions:
                 chunk["next"] += 1
                 continue
-            if now - self.last_action_at < self.config.action_gap_s:
+            taps = any(a["type"] == "tap" for a in actions)
+            if taps and now - self.last_action_at < self.config.action_gap_s:
                 # Previous hop still in progress; send late if the slot is still open.
                 if now >= due + slot_s:
                     chunk["skipped"].append(index)
                     chunk["next"] += 1
                     continue
                 break
-            try:
-                controls.keyDown(key)
-                controls.keyUp(key)
-            except Exception as exc:
-                self.counts["errors"] += 1
-                self.last_error = f"send failed: {exc}"
+            sent, refused = self._send(controls, actions)
+            if refused:
+                chunk.setdefault("refused", []).extend(refused)
+            if not sent:
                 chunk["skipped"].append(index)
                 chunk["next"] += 1
                 continue
-            self.presses.append((time.monotonic(), key))
+            label = short(sent)
+            self.presses.append((time.monotonic(), label))
             del self.presses[:-32]
             self.counts["applied"] += 1
-            self.last_key, self.last_action_at = key, now
-            chunk["sent"].append({"slot": index, "key": key, "at": clock(time.time()),
+            if taps:
+                self.last_action_at = now
+            self.last_key = label
+            chunk["sent"].append({"slot": index, "key": label, "at": clock(time.time()),
                                   "late_ms": int((now - due) * 1000)})
             chunk["next"] += 1
-            status = "applied:" + key
-            self._log({"kind": "action", "key": key, "slot": index, "call": chunk["answer"].call_id,
+            status = "applied:" + label
+            self._log({"kind": "action", "actions": slot_text(sent), "slot": index, "call": chunk["answer"].call_id,
                        "confidence": chunk["answer"].confidence, "why": chunk["answer"].why})
         if chunk["next"] >= len(chunk["keys"]):
             self._finish_chunk(chunk, cut="")
             self.chunk = None
         return status
+
+    def _send(self, controls, actions: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[str]]:
+        """Send one slot's actions in order. An action the game did not advertise is refused, not sent."""
+        caps = set(getattr(controls, "capabilities", ()) or self.capabilities)
+        sent, refused = [], []
+        for action in actions:
+            if not all(need in caps for need in NEEDS[action["type"]]):
+                refused.append(f"{action['type']} not offered by this game")
+                continue
+            try:
+                if action["type"] == "tap":
+                    controls.keyDown(action["key"])
+                    controls.keyUp(action["key"])
+                elif action["type"] == "moveTo":
+                    controls.moveTo(action["x"], action["y"])
+                elif action["type"] == "mouseDown":
+                    controls.mouseDown(action["x"], action["y"], button=action.get("button", "left"))
+                else:
+                    controls.mouseUp(action["x"], action["y"], button=action.get("button", "left"))
+                sent.append(action)
+            except Exception as exc:
+                self.counts["errors"] += 1
+                self.last_error = f"send failed: {exc}"
+                refused.append(f"{action['type']} failed: {type(exc).__name__}: {exc}"[:120])
+        return sent, refused
 
     def _cut_chunk(self, reason: str) -> None:
         if self.chunk is not None:
@@ -620,15 +802,17 @@ class SimplePolicy:
             self.chunk = None
 
     def _plan_text(self, answer: Answer) -> str:
-        return " ".join((k.replace("Key", "") if k else "-") for k in answer.keys) or "-"
+        return " ".join(short(parse_slot(k)[0]) for k in answer.keys) or "-"
 
     def _finish_chunk(self, chunk: Dict[str, Any], cut: str) -> None:
         answer = chunk["answer"]
         sent = chunk["sent"]
         extra = {"plan": self._plan_text(answer),
                  "slots_played": f"{chunk['next']}/{len(chunk['keys'])}",
-                 "sent_to_game": [f"{s['at']} tap {s['key']} (slot {s['slot']})" for s in sent],
+                 "sent_to_game": [f"{s['at']} {s['key']} (slot {s['slot']})" for s in sent],
                  "wait_ms": int((chunk["start"] - answer.finished_at) * 1000)}
+        if chunk.get("refused"):
+            extra["refused"] = chunk["refused"][:8]
         if chunk["skipped"]:
             extra["skipped_slots"] = chunk["skipped"]
         if cut:

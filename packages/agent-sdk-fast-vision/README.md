@@ -81,6 +81,32 @@ the model must first report what it sees, then plan:
 4 × 250 ms). The loop plays them on time; a newer plan replaces whatever is
 left. `ANO_CHUNK_MS=0` switches to one key per call.
 
+### Keys and pointer actions
+
+A slot is `"none"` or one or more SDK actions separated by `;`, all sent at the
+start of that slot:
+
+| slot text | sent as |
+|---|---|
+| `W` | `keyDown("KeyW")`, `keyUp("KeyW")` |
+| `moveTo 0.77 0.05` | `moveTo(0.77, 0.05)` |
+| `moveTo 0.77 0.05; mouseDown 0.77 0.05; mouseUp 0.77 0.05` | a click, as the explicit sequence the protocol recommends |
+
+Coordinates are normalized canvas coordinates (0–1 across and down the frame),
+as everywhere in the SDK. The prompt lists **only the actions the game
+advertises** in `controls.capabilities`, so a keyboard-only game never sees
+the pointer actions, and an action the game did not offer is refused and
+recorded in the trace rather than sent. Anything the parser does not recognise
+(for example the deprecated `click x y`) is recorded as `unusable`, never
+guessed at.
+
+When pointer actions are offered, the **NOW frame is also sent full-size**
+(`ANO_SEND_FRAME=auto`, width `ANO_FRAME_WIDTH`, default 1280) and click
+coordinates refer to it. The trace keeps it as `now.png`.
+
+The operator's instruction (`controls.instruction`) is sent in the user message,
+next to the image, as `Operator instruction: ...`.
+
 **The model decides.** The loop records what the model reports (`chicken`,
 `on`, `danger`) in the trace but never overrules its keys from it. The only
 filters are about time (stale or superseded answers) and an optional
@@ -105,7 +131,8 @@ Every call gets a folder, and `trace.jsonl` gets one line when its outcome is
 known:
 
 ```
-<run>/trace/<call>/sheet.png       the one image that was sent
+<run>/trace/<call>/sheet.png       the contact sheet that was sent
+<run>/trace/<call>/now.png         the full-size NOW frame, when pointer actions were offered
 <run>/trace/<call>/request.json    the exact HTTP body (the API key is a header, not in here)
 <run>/trace/<call>/response.json   the exact HTTP body received, or the error
 <run>/trace/<call>/outcome.json    what happened to the answer
@@ -133,11 +160,13 @@ as cards that update twice a second. `ANO_TRACE=0` turns recording off;
 | `ANO_MAX_INFLIGHT` | 1 | model calls out at once |
 | `ANO_REQUEST_GAP_S` | 0.2 if in-flight > 1, else 0 | minimum spacing between launches |
 | `ANO_CHUNK_MS` | 1000 | plan length per call; `0` = one key per call |
-| `ANO_CHUNK_SLOT_MS` | 250 | one key (or none) per slot |
+| `ANO_CHUNK_SLOT_MS` | 250 | length of one slot (its actions are sent at its start) |
 | `ANO_ACTION_GAP_S` | 0.2 (chunk) / 0.5 | minimum time between two taps |
 | `ANO_MAX_ANSWER_AGE_S` | 1.0 | drop an answer that waited longer than this |
 | `ANO_MIN_CONFIDENCE` | 0.3 | drop plans below this confidence |
-| `ANO_PROMPT_FILE` | built-in CrossRoad prompt | your prompt; placeholders `{frames} {chunk_ms} {slots} {slot_ms} {instruction}` |
+| `ANO_SEND_FRAME` | `auto` | also send the NOW frame full-size: `auto` (when pointer actions are offered), `1`, `0` |
+| `ANO_FRAME_WIDTH` | 1280 | width of that frame (aspect kept) |
+| `ANO_PROMPT_FILE` | built-in CrossRoad prompt | your prompt; placeholders `{frames} {chunk_ms} {slots} {slot_ms} {actions} {instruction}` |
 | `ANO_SAY` | 1 | send the model's `why` to the game chat |
 | `ANO_RUN_DIR` | `./runs/fast-vision` | where the trace goes |
 | `ANO_TRACE` / `ANO_TRACE_KEEP` | 1 / 300 | trace on/off, folders kept |
@@ -171,12 +200,28 @@ inside the planning prompt it still reported a squashed chicken as `standing`.
 Read the trace, not the summary: it is the only way to tell perception from
 decision errors.
 
+**Instructions and clicks.** With the operator instruction as the last line of
+the system prompt, the model ignored it in 9 of 9 calls ("press play again",
+"press the Restart button") and kept reasoning about cars. In the user message next to the image it
+acknowledged it but sent no click until the action list showed how a click is
+written. Then, aiming at the real Restart button (true box x 0.729–0.812,
+y 0.024–0.075, its neighbour Pause just to the left):
+
+| what the model was given | clicks inside Restart |
+|---|---|
+| contact sheet only | 0/4 — it clicked (0.24, 0.12), reading coordinates off the whole sheet |
+| contact sheet + full-size NOW frame | 4/4 — (0.77, 0.04–0.05), the button's centre |
+
+The second image added about 100 ms per call.
+
 **Bugs the trace caught in our own loop** (fixed here):
 
 - Tiles were forced to 16:9, stretching a 4:3 game 1.33× sideways.
 - Captions said "then pressed W" on every tile after the first press (the last
   key ever pressed, not the key pressed after that frame), telling the model it
   had been holding W the whole time.
+- Call numbers restarted at 1 with each runner restart, overwriting the
+  previous run's trace folders; numbering now continues.
 
 **Timing.**
 
@@ -198,5 +243,8 @@ python -m unittest discover -s packages/agent-sdk-fast-vision -p 'test_*.py' -v
 
 No network: the model is stubbed. Covered: one-at-a-time and N-in-flight
 requests, newest-answer-wins, stale drops, chunk slot timing, a newer chunk
-cutting an old one, keys played as the model gave them, caption keys,
-trace files, tile aspect, `ANO_PROMPT_FILE`, and `decide()` end to end.
+cutting an old one, keys played as the model gave them, the slot grammar, a
+click sent as moveTo → mouseDown → mouseUp, refusal of actions the game does
+not offer, the prompt listing only offered actions, the full-size frame,
+caption keys, trace files and numbering across restarts, tile aspect,
+`ANO_PROMPT_FILE`, and `decide()` end to end.

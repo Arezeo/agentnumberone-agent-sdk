@@ -25,7 +25,7 @@ from typing import Any, Dict, List
 from trace_cli import load
 
 CALL_DIR = re.compile(r"^\d{6}$")
-FILES = {"sheet.png": "image/png", "request.json": "application/json",
+FILES = {"sheet.png": "image/png", "now.png": "image/png", "request.json": "application/json",
          "response.json": "application/json", "outcome.json": "application/json"}
 
 
@@ -231,6 +231,8 @@ function card(r, fresh) {
           <a href="${base}/request.json?elide" target="_blank">request.json (readable)</a>
           <a href="${base}/request.json" target="_blank">exact bytes</a>
           <a href="${base}/sheet.png" target="_blank">sheet.png</a>
+          ${(r.capabilities||[]).some(c => c.startsWith("mouse") || c === "moveTo") ? `<a href="${base}/now.png" target="_blank">now.png (full-size frame)</a>` : ""}
+          ${r.instruction ? `<span class="muted">instruction: ${esc(r.instruction)}</span>` : ""}
           ${r.request_bytes ? `<span class="muted">${(r.request_bytes/1024).toFixed(0)} KB</span>` : ""}</div>
         <span class="n">3 · output</span><div>${output}
           ${done ? `<div class="links"><a href="${base}/response.json" target="_blank">response.json</a></div>` : ""}</div>
