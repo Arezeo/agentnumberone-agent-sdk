@@ -19,4 +19,6 @@ jobs:
       - run: python -m unittest discover -s GameScaling0.8B-S3/tests -v
       - run: python -m compileall -q GameScaling0.8B-S3
       - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - run: python -m py_compile packages/agent-sdk-fast-vision/*.py
+      - run: python -m unittest discover -s packages/agent-sdk-fast-vision -p 'test_*.py' -v
       - run: python tools/build_release.py --output /tmp/gamescaling-kit.zip
