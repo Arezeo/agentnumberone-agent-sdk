@@ -40,6 +40,7 @@ Set `--origin` to the exact page origin, including the port for local previews. 
 - [GameScaling 0.8B-S3 and 2B-S3](GameScaling0.8B-S3/): Apple Silicon FP16, native reasoning and actions over WebRTC, [portable setup and test procedures](docs/gamescaling-kit.md).
 - [GameScaling GGUF policy — 0.8B / 2B / 9B](packages/agent-sdk-llamacpp/): llama.cpp backend for the reference harness. Runs the 9B (5.6 GB Q4_K_M) where the MLX kit cannot, and needs no weight conversion.
 - [GameScaling through llama.cpp](docs/gamescaling-kit.md#gamescaling-through-llamacpp): a GGUF checkpoint on a llama.cpp server, driven by [`llama_policy.py`](GameScaling0.8B-S3/llama_policy.py) on the reference runner. We run 9B-S3 at 4-bit this way; bring your own game with `--prompt-file`.
+- [Fast vision policy — hosted API](packages/agent-sdk-fast-vision/): any OpenAI-compatible vision model; six frames tiled into one captioned image, overlapping calls, action chunks with key taps and pointer clicks, and a per-call trace (exact request, response and keys sent) with a live local page. Includes what we measured on CrossRoad.
 
 ## Connect a model
 
